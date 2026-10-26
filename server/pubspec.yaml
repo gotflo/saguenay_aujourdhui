@@ -1,0 +1,17 @@
+name: saguenay_assistant
+description: Le petit serveur de l'assistant en ligne de Saguenay Aujourd'hui. Il garde la clé d'API de Claude, répond aux questions, trie les objets en photo et lit les communiqués de la Ville.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.10.4
+
+dependencies:
+  http: ^1.6.0
+  saguenay_core:
+    path: ../packages/saguenay_core
+  shelf: ^1.4.2
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.25.6

@@ -1,0 +1,22 @@
+# Dart et Flutter
+.dart_tool/
+.packages
+build/
+coverage/
+*.iml
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Secrets : jamais dans le dépôt
+.env
+.env.*
+*.jks
+*.keystore
+key.properties
+
+# Kotlin et Gradle
+.kotlin/
+.gradle/
+local.properties

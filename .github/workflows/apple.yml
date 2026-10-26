@@ -1,0 +1,43 @@
+name: Apple
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  ios:
+    name: App et widget iOS
+    runs-on: macos-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.38.5
+          channel: stable
+          cache: true
+      - run: flutter --version && xcodebuild -version
+      - run: flutter pub get
+      - name: Plists, droits et manifestes
+        run: |
+          for f in ios/Runner/Info.plist ios/Runner/Runner.entitlements ios/Runner/PrivacyInfo.xcprivacy \
+                   ios/TodayWidget/Info.plist ios/TodayWidget/TodayWidget.entitlements ios/TodayWidget/PrivacyInfo.xcprivacy; do
+            plutil -lint "$f"
+          done
+      - name: Le projet Xcode s'ouvre et liste ses cibles
+        run: xcodebuild -list -project ios/Runner.xcodeproj
+      - name: App et widget pour le simulateur
+        run: flutter build ios --simulator --debug
+      - name: Le widget est intégré à l'app
+        run: |
+          APP=build/ios/iphonesimulator/Runner.app
+          test -d "$APP/PlugIns/TodayWidgetExtension.appex"
+          plutil -p "$APP/PlugIns/TodayWidgetExtension.appex/Info.plist" | grep widgetkit-extension
+          plutil -p "$APP/Info.plist" | grep ca.saguenayaujourdhui.rafraichir
+      - name: Version appareil, sans signature
+        run: flutter build ios --release --no-codesign

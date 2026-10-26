@@ -1,0 +1,40 @@
+name: saguenay_aujourdhui
+description: "Ta journée à Saguenay, d'un coup d'œil."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.10.4
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  flutter_local_notifications: ^22.3.3
+  flutter_riverpod: ^3.3.2
+  google_fonts: ^8.2.1
+  home_widget: ^0.10.0
+  intl: ^0.20.2
+  saguenay_core:
+    path: ../packages/saguenay_core
+  shared_preferences: ^2.5.5
+  timezone: ^0.11.2
+  workmanager: ^0.10.10
+  share_plus: ^13.3.1
+  url_launcher: ^6.3.2
+  image_picker: ^1.2.3
+  http: ^1.6.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    # Polices embarquées : l’app ne dépend pas du réseau pour s’afficher.
+    - assets/fonts/

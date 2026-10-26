@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="widget_bg">#1E2125</color>
+    <color name="widget_glass">#EB1E2125</color>
+    <color name="widget_glass_edge">#26FFFFFF</color>
+    <color name="widget_glow">#1AFFD02B</color>
+    <color name="widget_ink">#F1F2F3</color>
+    <color name="widget_ink_2">#A9AFB5</color>
+    <!-- Étiquettes du widget, lisibles à 4,5:1 sur son fond. -->
+    <color name="widget_kind_water">#4DB8E8</color>
+    <color name="widget_kind_parking">#FF9B3D</color>
+    <color name="widget_kind_collection">#3FC184</color>
+    <color name="widget_kind_bus">#7EA7FF</color>
+    <color name="widget_kind_roadwork">#F2B544</color>
+    <color name="widget_kind_weather">#A9C0D4</color>
+    <color name="widget_kind_power">#FF8FB8</color>
+    <color name="widget_kind_roads">#CDB89C</color>
+    <color name="widget_kind_critical">#FF7A70</color>
+</resources>

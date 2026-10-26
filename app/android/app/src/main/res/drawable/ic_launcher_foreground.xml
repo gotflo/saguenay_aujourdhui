@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Le soleil et la vague du logo, centrés dans la zone sûre de 66 dp. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M33.4,61.2C40,55 46.6,55 53.2,61.2C59.8,67.4 66.4,67.4 74.6,60.4"
+        android:strokeWidth="5.4"
+        android:strokeColor="#1A1906"
+        android:strokeLineCap="round" />
+    <path
+        android:fillColor="#1A1906"
+        android:pathData="M57.9,44.7a5.4,5.4 0,1 1,10.8 0a5.4,5.4 0,1 1,-10.8 0z" />
+</vector>

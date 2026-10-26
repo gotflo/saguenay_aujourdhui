@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="ic_launcher_background">#FFD02B</color>
+    <color name="widget_bg">#FFFFFF</color>
+    <!-- Le verre du widget : presque opaque pour garder le contraste, quel que soit le fond d’écran. -->
+    <color name="widget_glass">#EBFFFFFF</color>
+    <color name="widget_glass_edge">#B3FFFFFF</color>
+    <color name="widget_glow">#33FFD02B</color>
+    <color name="widget_ink">#121417</color>
+    <color name="widget_ink_2">#5A6066</color>
+    <!-- Étiquettes du widget, lisibles à 4,5:1 sur son fond. -->
+    <color name="widget_kind_water">#0B6E9C</color>
+    <color name="widget_kind_parking">#B35600</color>
+    <color name="widget_kind_collection">#157A4A</color>
+    <color name="widget_kind_bus">#2F5FD0</color>
+    <color name="widget_kind_roadwork">#8F5E10</color>
+    <color name="widget_kind_weather">#4E6A85</color>
+    <color name="widget_kind_power">#B8336A</color>
+    <color name="widget_kind_roads">#6E5A44</color>
+    <color name="widget_kind_critical">#C4302B</color>
+</resources>

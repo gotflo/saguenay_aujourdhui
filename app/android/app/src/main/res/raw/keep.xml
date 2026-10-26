@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ces ressources ne sont appelées que par leur nom, depuis Dart ou le widget.
+     Sans cette liste, la réduction des ressources de la version de production les supprime. -->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@drawable/ic_notification,@drawable/widget_*,@layout/today_widget,@layout/today_widget_small,@layout/today_widget_large,@layout/today_widget_preview,@xml/shortcuts,@xml/today_widget_info" />

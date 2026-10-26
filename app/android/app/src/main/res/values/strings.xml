@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_header">Aujourd’hui</string>
+    <string name="widget_label_default">Aujourd’hui</string>
+    <string name="widget_title_default">Ouvre l’app pour choisir ton adresse</string>
+    <string name="widget_description">Ce qui te concerne aujourd’hui à Saguenay</string>
+    <string name="widget_preview_place">Racine Est</string>
+    <string name="widget_preview_label">Cette nuit</string>
+    <string name="widget_preview_title">Pas d’auto dans la rue cette nuit</string>
+    <string name="widget_preview_body">Interdit de minuit à 7 h. L’amende est de 45 $.</string>
+    <string name="widget_preview_second">Collecte · Ordures</string>
+    <string name="widget_preview_second_detail">demain matin</string>
+    <string name="widget_next_header">À venir</string>
+    <string name="widget_stale_label">À mettre à jour</string>
+    <string name="widget_stale_title">Ouvre l’app un instant</string>
+    <string name="widget_stale_body">Ton widget a besoin des infos de la semaine qui vient.</string>
+    <string name="widget_tomorrow">Demain</string>
+    <string name="shortcut_collection">Collectes</string>
+    <string name="shortcut_weather">Météo</string>
+    <string name="shortcut_emergency">Urgences</string>
+</resources>
