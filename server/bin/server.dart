@@ -10,7 +10,8 @@ import 'package:shelf/shelf_io.dart' as shelf_io;
 /// - `PORT` (8080 par défaut) ;
 /// - `ALLOWED_ORIGINS` : sites web autorisés, séparés par des virgules ;
 /// - `TRUST_PROXY=1` derrière un proxy qui remplit `X-Forwarded-For` ;
-/// - `DAILY_LIMIT` : plafond de demandes par jour (2000 par défaut).
+/// - `DAILY_LIMIT` : plafond de demandes par jour (2000 par défaut) ;
+/// - `TZ=America/Toronto` : les heures des textos sont celles de Saguenay.
 Future<void> main() async {
   final env = Platform.environment;
   final key = env['ANTHROPIC_API_KEY'] ?? '';
@@ -19,6 +20,8 @@ Future<void> main() async {
   final Claude claude = key.isEmpty ? const NoClaude() : HttpClaude(key);
   final press = PressDesk(claude);
   final relay = Relay();
+  // La journée d'une adresse par texto ou au téléphone (format Twilio).
+  final dayLine = DayLine();
   final handler = const Pipeline()
       .addMiddleware(logRequests())
       .addHandler(
@@ -26,6 +29,7 @@ Future<void> main() async {
           claude: claude,
           press: press,
           relay: relay,
+          dayLine: dayLine,
           limiter: RateLimiter(perDay: int.tryParse(env['DAILY_LIMIT'] ?? '') ?? 2000),
           allowedOrigins: {
             for (final o in (env['ALLOWED_ORIGINS'] ?? '').split(','))

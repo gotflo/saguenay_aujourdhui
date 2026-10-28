@@ -25,9 +25,10 @@ widget d'écran d'accueil suffit.
 
 ## Pourquoi
 
-Toutes ces infos existent déjà, mais elles sont éparpillées entre neuf sources : le site de la
-Ville, la carte des avis d'aqueduc, la carte de circulation, la STS, le ministère de la Santé,
-Environnement Canada, Hydro-Québec, Québec 511. Un dimanche soir de novembre, pour savoir si on
+Toutes ces infos existent déjà, mais elles sont éparpillées entre une douzaine de sources : le site
+de la Ville, la carte des avis d'aqueduc, la carte de circulation, la STS, le ministère de la Santé,
+Environnement Canada, Hydro-Québec, Québec 511, les stations de qualité de l'air, les interdictions
+de feux. Un dimanche soir de novembre, pour savoir si on
 sort le bac, si on peut laisser l'auto dans la rue et si l'avis d'ébullition est levé, il faut
 tout fouiller. L'app lit ces sources pour une adresse et met en premier ce qui compte à l'heure
 qu'il est.
@@ -46,6 +47,17 @@ C'est un projet indépendant. Il n'est pas affilié à la Ville de Saguenay ni �
 - **Demande à l'app** : des réponses tirées des données de l'adresse, sans réseau (« Ça va où,
   une boîte de pizza ? », « Je sors quel bac cette semaine ? »). En ligne, une photo suffit pour
   le tri, et les communiqués de la Ville sont résumés en mots simples.
+- **Veiller sur un proche.** Chaque adresse gardée peut porter un nom (« Chez maman », « Chalet »).
+  Un avis d'eau ou une panne y est signalé sous ce nom, sans qu'il faille l'afficher.
+- **Partager une adresse** par texto ou messagerie : le lien l'ajoute chez l'autre, sans compte,
+  après confirmation. Le nom reste chez soi.
+- **L'air, les feux et les pointes, seulement quand ça compte** : l'air mauvais à la station la plus
+  proche, une interdiction de feux qui couvre l'adresse, une pointe d'Hydro-Québec la veille (au
+  choix, pour le Crédit hivernal ou Flex D). Le reste du temps, rien ne s'affiche.
+- **Des cartes en direct** des zones d'avis d'eau et des chantiers autour de l'adresse, et la neige
+  ou la pluie qui tombe sur la carte du haut quand il en tombe vraiment.
+- **Sans téléphone intelligent** : on texte son adresse (ou on la dit au téléphone) et on reçoit la
+  journée en quelques phrases.
 - **Signaler un problème à la Ville** : un message clair à coller dans le formulaire officiel.
 - **Tes collectes dans ton calendrier**, en un fichier iCal.
 
@@ -64,9 +76,12 @@ Toutes sont branchées et lues en direct.
 | Météo et alertes | Environnement Canada, API GeoMet (Licence du gouvernement ouvert) | Prêt |
 | Pannes et coupures planifiées | Hydro-Québec (CC BY-NC 4.0) | Prêt, licence non commerciale |
 | Routes et caméras | Ministère des Transports, Québec 511 (CC BY 4.0) | Prêt |
+| Qualité de l'air | Ministère de l'Environnement, IQA horaire des stations Parc Powell et UQAC (CC BY 4.0) | Prêt |
+| Interdictions de feux | Ministère de la Sécurité intérieure et SOPFEU, zones en vigueur (WFS) | Prêt |
+| Pointes de consommation | Hydro-Québec, événements de pointe résidentiels (CC BY-NC 4.0) | Prêt, licence non commerciale |
+| Fond des cartes | OpenStreetMap (ODbL) | Prêt pour un essai ; un fournisseur de tuiles pour la sortie publique |
 
-Pas encore possible : savoir quand la déneigeuse passe dans ta rue (rien n'est public) ni la
-qualité de l'air à Saguenay (aucune source ouverte en temps réel).
+Pas encore possible : savoir quand la déneigeuse passe dans ta rue (rien n'est public).
 
 Quelques pièges que le code gère : les couches ArcGIS de la Ville enregistrent l'heure locale comme
 si c'était de l'UTC ; la carte des avis laisse « Actif » des avis terminés, on se fie donc à la date
@@ -86,6 +101,8 @@ Le score est le produit des deux. La plus haute prend la grande carte du haut si
 - La veille de la collecte, le rappel du bac monte à partir de 15 h.
 - Le bus prend de l'importance aux heures de pointe, si l'arrêt a un départ bientôt.
 - Une route fermée ou glacée sur la 175, la 170 ou la 172 passe en haut ; sinon, une tuile calme.
+- L'air, les feux et les pointes ne comptent que s'ils touchent l'adresse : un air mauvais, une
+  interdiction sur son secteur, une pointe dans les 36 heures. Un air bon ne prend aucune place.
 - La carte des urgences ne monte jamais d'elle-même : on ne veut pas pousser quelqu'un à choisir un
   hôpital d'après des chiffres.
 
@@ -112,8 +129,10 @@ disparaît à 7 h 47), et le widget affiche la bonne au bon moment.
   d'hiver, le bac la veille à 19 h, les travaux sur ta rue à 6 h 45, les coupures planifiées la
   veille, « Ta semaine » le dimanche à 18 h.
 - **Une relecture toutes les heures, app fermée** (WorkManager sur Android, BGTaskScheduler sur
-  iOS) : elle relit les sources, envoie un nouvel avis d'eau ou une nouvelle alerte météo,
-  redessine le widget et prolonge les rappels. Aucun serveur de notifications : c'est le téléphone
+  iOS) : elle relit les sources, envoie un nouvel avis d'eau, une alerte météo, l'air mauvais, une
+  panne ou une pointe (au choix), redessine le widget et prolonge les rappels.
+- **Les autres adresses gardées** sont surveillées aussi : leurs avis d'eau et leurs pannes arrivent
+  sous leur nom, « Chez maman : avis d'ébullition ». Aucun serveur de notifications : c'est le téléphone
   qui fait le travail. Vérifié sur Android en version de production.
 - **Heures calmes**, de 22 h à 7 h, au choix : les alertes qui ne pressent pas attendent le matin.
 - Toucher une notification ouvre directement la bonne fiche.
@@ -123,8 +142,17 @@ disparaît à 7 h 47), et le widget affiche la bonne au bon moment.
 Les réponses courantes sont calculées sur le téléphone, sans réseau, d'après les données de
 l'adresse et les pages de tri de la Ville. Pour le reste, un petit serveur
 ([`server/`](server/README.md)) prend le relais avec Claude : questions libres, tri en photo,
-textes officiels en langage simple, communiqués de la Ville résumés à partir de leur PDF. La clé
-d'API reste sur le serveur ; l'app n'envoie que le secteur, jamais l'adresse.
+textes officiels en langage simple, communiqués de la Ville résumés à partir de leur PDF. Il répond
+dans la langue de la question et nomme sa source ; sans l'information, il le dit au lieu de
+deviner. La clé d'API reste sur le serveur ; l'app n'envoie que le secteur, jamais l'adresse.
+
+## Sans téléphone intelligent
+
+Le même serveur répond par texto et au téléphone (format TwiML de Twilio) : on écrit
+« 201 rue Racine Est », ou on le dit, et on reçoit la journée de l'adresse en 320 caractères au
+plus : l'eau, le stationnement, la prochaine collecte, une panne. Les relevés de la ville sont
+gardés dix minutes pour tout le monde ; ni le numéro ni l'adresse ne sont conservés. Les heures
+sont celles de Saguenay, quel que soit l'hébergeur (`TZ=America/Toronto` dans l'image Docker).
 
 ## La version web
 
@@ -208,11 +236,11 @@ cd server && dart test
 cd app && flutter test
 ```
 
-296 tests : les règles et le moteur, la suite du widget (minute exacte, nuit du changement d'heure,
+337 tests : les règles et le moteur, la suite du widget (minute exacte, nuit du changement d'heure,
 temps de calcul), les lecteurs de chaque source sur leurs vraies réponses enregistrées, y compris
 abîmées, trop grosses ou trop lentes ; les parcours de l'app, les notifications, la tâche de fond,
-l'affichage sur quatre tailles d'écran ; la configuration Android et iOS que seule la version de
-production révèle ; le serveur et son relais.
+l'affichage sur quatre tailles d'écran, les adresses suivies et partagées ; la configuration Android
+et iOS que seule la version de production révèle ; le serveur, son relais, le texto et la voix.
 
 À chaque envoi sur GitHub, une machine Linux lance tous les tests et compile la version web, et
 une machine macOS compile l'app iOS avec son widget.

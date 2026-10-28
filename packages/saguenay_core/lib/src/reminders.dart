@@ -1,14 +1,16 @@
 import 'agenda.dart';
 import 'calendar.dart';
+import 'environment.dart';
 import 'format.dart';
 import 'parking.dart';
 import 'place.dart';
+import 'power.dart';
 import 'relevance.dart';
 import 'water.dart';
 import 'weather.dart';
 
 /// L'ordre compte : il sert aux identifiants des notifications.
-enum ReminderKind { water, weather, power, parking, collection, roadwork, week }
+enum ReminderKind { water, weather, power, parking, collection, roadwork, week, peak }
 
 /// Une notification à programmer sur le téléphone.
 class PlannedReminder {
@@ -202,6 +204,7 @@ class WaterAlert extends Alert {
     required this.upcoming,
     required super.title,
     required super.body,
+    this.scope,
   });
 
   final WaterNotice notice;
@@ -209,19 +212,77 @@ class WaterAlert extends Alert {
   /// Annoncé pour les prochaines heures, pas encore en vigueur.
   final bool upcoming;
 
+  /// L'adresse suivie quand ce n'est pas la sienne (celle d'un proche).
+  final String? scope;
+
   @override
   ReminderKind get kind => ReminderKind.water;
 
   /// On prévient une fois quand l'avis est annoncé, une fois quand il entre en vigueur.
   @override
-  String get key => '${notice.number}:${upcoming ? 'annonce' : 'en-cours'}';
+  String get key =>
+      '${scope == null ? '' : '$scope|'}${notice.number}:${upcoming ? 'annonce' : 'en-cours'}';
 
   @override
   int get id {
+    if (scope != null) return 1300000 + stableHash(key) % 99999;
     final digits = int.tryParse(notice.number.replaceAll(RegExp(r'\D'), '')) ?? 0;
     return 900000 + (digits % 49999) * 2 + (upcoming ? 0 : 1);
   }
 }
+
+/// L'air est mauvais à la station la plus proche de l'adresse. Une fois par jour au plus.
+class AirAlert extends Alert {
+  const AirAlert(this.reading, {required super.title, required super.body});
+
+  final AirReading reading;
+
+  @override
+  ReminderKind get kind => ReminderKind.weather;
+
+  @override
+  String get key => 'air:${reading.station}:${isoDay(reading.at)}';
+
+  @override
+  int get id => 1000000 + stableHash(key) % 99999;
+}
+
+/// Une pointe d'Hydro-Québec annoncée pour les prochaines heures.
+class PeakAlert extends Alert {
+  const PeakAlert(this.event, {required super.title, required super.body});
+
+  final PeakEvent event;
+
+  @override
+  ReminderKind get kind => ReminderKind.peak;
+
+  @override
+  String get key => 'pointe:${event.key}';
+
+  @override
+  int get id => 1100000 + stableHash(key) % 99999;
+}
+
+/// Une panne en cours près d'une adresse suivie.
+class OutageAlert extends Alert {
+  const OutageAlert(this.outage, this.placeId, {required super.title, required super.body});
+
+  final PowerOutage outage;
+  final String placeId;
+
+  @override
+  ReminderKind get kind => ReminderKind.power;
+
+  @override
+  String get key => 'panne:$placeId:${outage.start.toUtc().toIso8601String()}';
+
+  @override
+  int get id => 1200000 + stableHash(key) % 99999;
+}
+
+/// « 2026-10-28 ».
+String isoDay(DateTime d) =>
+    '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
 /// Un avertissement ou une veille d'Environnement Canada.
 class WeatherAlertNotice extends Alert {
@@ -243,12 +304,14 @@ class WeatherAlertNotice extends Alert {
 
 abstract final class WaterAlerts {
   /// Les avis qui touchent l'adresse, en cours ou prévus dans les 24 heures,
-  /// et qu'on n'a pas encore signalés.
+  /// et qu'on n'a pas encore signalés. [who] nomme une adresse suivie qui
+  /// n'est pas la sienne : « Chez maman », « Chalet ».
   static List<WaterAlert> due(
     Place place,
     CityData city,
     DateTime now, {
     Set<String> alreadySent = const {},
+    String? who,
   }) {
     final out = <WaterAlert>[];
     for (final number in place.waterNotices) {
@@ -260,23 +323,37 @@ abstract final class WaterAlerts {
           notice.start.difference(now) <= const Duration(hours: 24);
       if (state != NoticeState.active && !soon) continue;
 
-      final alert = _describe(notice, now, upcoming: soon);
+      final alert = _describe(
+        notice,
+        now,
+        upcoming: soon,
+        who: who,
+        scope: who == null ? null : place.id,
+      );
       if (!alreadySent.contains(alert.key)) out.add(alert);
     }
     return out;
   }
 
-  static WaterAlert _describe(WaterNotice n, DateTime now, {required bool upcoming}) {
+  static WaterAlert _describe(
+    WaterNotice n,
+    DateTime now, {
+    required bool upcoming,
+    String? who,
+    String? scope,
+  }) {
     if (upcoming) {
       final end = n.end;
       final when = sameDay(n.start, now) ? 'Aujourd’hui' : 'Demain';
       final hours = end == null
           ? 'dès ${clockTimeOf(n.start)}'
           : 'de ${clockTimeOf(n.start)} à ${clockTimeOf(end)}';
+      final what = '${n.type.label.toLowerCase()} $hours';
       return WaterAlert(
         n,
         upcoming: true,
-        title: '$when, ${n.type.label.toLowerCase()} $hours',
+        scope: scope,
+        title: who == null ? '$when, $what' : '$who : ${when.toLowerCase()}, $what',
         body: n.zone,
       );
     }
@@ -284,11 +361,88 @@ abstract final class WaterAlerts {
       return WaterAlert(
         n,
         upcoming: false,
-        title: 'Avis d’ébullition à ton adresse',
+        scope: scope,
+        title: who == null ? 'Avis d’ébullition à ton adresse' : '$who : avis d’ébullition',
         body: 'Fais bouillir l’eau au moins une minute avant de la boire ou de cuisiner.',
       );
     }
-    return WaterAlert(n, upcoming: false, title: '${n.type.label} à ton adresse', body: n.zone);
+    return WaterAlert(
+      n,
+      upcoming: false,
+      scope: scope,
+      title: who == null ? '${n.type.label} à ton adresse' : '$who : ${n.type.label.toLowerCase()}',
+      body: n.zone,
+    );
+  }
+}
+
+/// L'air mauvais à la station la plus proche, une fois par jour au plus.
+abstract final class AirAlerts {
+  static List<AirAlert> due(
+    Place place,
+    CityData city,
+    DateTime now, {
+    Set<String> alreadySent = const {},
+  }) {
+    final lat = place.lat, lon = place.lon;
+    final r = (lat == null || lon == null) ? null : city.air?.nearest(lat, lon, now);
+    if (r == null || r.level != AirLevel.poor) return const [];
+    final alert = AirAlert(
+      r,
+      title: 'L’air est de mauvaise qualité',
+      body: 'Indice de ${r.index} à ${r.shortName}. Limite les efforts dehors aujourd’hui.',
+    );
+    return alreadySent.contains(alert.key) ? const [] : [alert];
+  }
+}
+
+/// Une pointe d'Hydro-Québec dans les 24 heures, signalée une seule fois.
+abstract final class PeakAlerts {
+  static List<PeakAlert> due(CityData city, DateTime now, {Set<String> alreadySent = const {}}) {
+    final e = city.peaks?.next(now);
+    if (e == null || e.start.difference(now) > const Duration(hours: 24)) return const [];
+    final when = e.activeAt(now)
+        ? 'en ce moment'
+        : sameDay(e.start, now)
+        ? 'aujourd’hui'
+        : 'demain';
+    final alert = PeakAlert(
+      e,
+      title: 'Pointe d’Hydro-Québec $when, de ${clockTimeOf(e.start)} à ${clockTimeOf(e.end)}',
+      body: 'Chauffe un peu avant, puis baisse le chauffage pendant la pointe (${e.offersLabel}).',
+    );
+    return alreadySent.contains(alert.key) ? const [] : [alert];
+  }
+}
+
+/// Une panne en cours près d'une adresse suivie : utile surtout pour veiller
+/// sur un proche l'hiver.
+abstract final class OutageAlerts {
+  static List<OutageAlert> due(
+    Place place,
+    CityData city,
+    DateTime now, {
+    Set<String> alreadySent = const {},
+    String? who,
+  }) {
+    final p = city.power, lat = place.lat, lon = place.lon;
+    if (p == null || lat == null || lon == null) return const [];
+    final out = <OutageAlert>[];
+    for (final o in p.near(lat, lon)) {
+      if (o.planned || !o.activeAt(now, takenAt: p.takenAt)) continue;
+      final end = o.end;
+      final alert = OutageAlert(
+        o,
+        place.id,
+        title: who == null ? 'Panne de courant dans ton secteur' : '$who : panne de courant',
+        body: end == null
+            ? 'Hydro-Québec n’a pas encore d’heure de retour.'
+            : 'Retour du courant prévu vers ${clockTimeOf(end)}.',
+      );
+      if (!alreadySent.contains(alert.key)) out.add(alert);
+      break;
+    }
+    return out;
   }
 }
 
@@ -340,5 +494,37 @@ abstract final class QuietHours {
     if (m >= startMinute) return atMinute(addDays(now, 1), endMinute);
     if (m < endMinute) return atMinute(now, endMinute);
     return null;
+  }
+}
+
+/// Tout ce qui mérite une notification maintenant. L'adresse affichée reçoit
+/// tout ce qui est activé ; les adresses suivies (un parent, le chalet)
+/// seulement l'eau et les pannes, sous leur nom : « Chez maman : panne de
+/// courant ». L'air et les pointes valent pour toute la ville : une seule fois.
+abstract final class Alerts {
+  static List<Alert> due(
+    Place place,
+    CityData city,
+    DateTime now, {
+    required Set<ReminderKind> enabled,
+    List<({Place place, String who})> followed = const [],
+    Set<String> alreadySent = const {},
+  }) {
+    final sent = alreadySent;
+    bool on(ReminderKind k) => enabled.contains(k);
+    return [
+      if (on(ReminderKind.water)) ...WaterAlerts.due(place, city, now, alreadySent: sent),
+      if (on(ReminderKind.weather)) ...WeatherAlerts.due(city, now, alreadySent: sent),
+      if (on(ReminderKind.weather)) ...AirAlerts.due(place, city, now, alreadySent: sent),
+      if (on(ReminderKind.power)) ...OutageAlerts.due(place, city, now, alreadySent: sent),
+      if (on(ReminderKind.peak)) ...PeakAlerts.due(city, now, alreadySent: sent),
+      for (final f in followed)
+        if (f.place.id != place.id) ...[
+          if (on(ReminderKind.water))
+            ...WaterAlerts.due(f.place, city, now, alreadySent: sent, who: f.who),
+          if (on(ReminderKind.power))
+            ...OutageAlerts.due(f.place, city, now, alreadySent: sent, who: f.who),
+        ],
+    ];
   }
 }

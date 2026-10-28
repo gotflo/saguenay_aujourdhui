@@ -99,6 +99,28 @@ abstract final class BackgroundRefresh {
       PowerSnapshot.fromJson,
       (v) => v.toJson(),
     );
+    final env = EnvironmentClient(client: client);
+    final air = await _refresh(
+      prefs,
+      'air',
+      () => env.air(now: t),
+      AirSnapshot.fromJson,
+      (v) => v.toJson(),
+    );
+    final fireBans = await _refresh(
+      prefs,
+      'feux',
+      () => env.fireBans(now: t),
+      FireBanSnapshot.fromJson,
+      (v) => v.toJson(),
+    );
+    final peaks = await _refresh(
+      prefs,
+      'pointes',
+      () => env.peaks(now: t),
+      PeakSnapshot.fromJson,
+      (v) => v.toJson(),
+    );
 
     final place =
         demo ??
@@ -114,12 +136,21 @@ abstract final class BackgroundRefresh {
       waterKnownUntil: water?.knownUntil ?? Demo.city.waterKnownUntil,
       weather: weather,
       power: power,
+      air: air,
+      fireBans: fireBans,
+      peaks: peaks,
     );
+    // Les autres adresses gardées : un parent, le chalet. On veille sur elles
+    // aussi, sans qu'il faille les afficher.
+    final followed = [
+      for (final a in readSavedAddresses(prefs))
+        if (a.id != id) (place: livePlace(a, water: water, roadworks: works), who: a.displayName),
+    ];
 
     final n = notifications ?? await createNotifications();
     final enabled = RemindersNotifier.read(prefs);
     if (n.supported) {
-      await _alerts(prefs, n, place, city, t, enabled);
+      await _alerts(prefs, n, place, city, t, enabled, followed);
       await n.replaceScheduled(
         const ReminderPlanner().plan(place, n.nowInSaguenay(), enabled: enabled, city: city),
       );
@@ -136,15 +167,18 @@ abstract final class BackgroundRefresh {
     CityData city,
     DateTime now,
     Set<ReminderKind> enabled,
+    List<({Place place, String who})> followed,
   ) async {
     const key = 'alertes-signalees';
     final sent = {...?prefs.getStringList(key)};
-    final due = <Alert>[
-      if (enabled.contains(ReminderKind.water))
-        ...WaterAlerts.due(place, city, now, alreadySent: sent),
-      if (enabled.contains(ReminderKind.weather))
-        ...WeatherAlerts.due(city, now, alreadySent: sent),
-    ];
+    final due = Alerts.due(
+      place,
+      city,
+      now,
+      enabled: enabled,
+      followed: followed,
+      alreadySent: sent,
+    );
     if (due.isEmpty || !await n.isAllowed()) return;
     final quiet = prefs.getBool(QuietHoursNotifier.key) ?? false;
     for (final alert in due) {

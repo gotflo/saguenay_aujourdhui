@@ -10,6 +10,7 @@ import '../../state/providers.dart';
 import '../../theme/colors.dart';
 import '../../widgets/fade_in.dart';
 import '../../widgets/pressable.dart';
+import '../../widgets/weather_fall.dart';
 import '../demo/moments_sheet.dart';
 import '../details/detail_sheet.dart';
 import '../places/place_picker.dart';
@@ -86,6 +87,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
                     sliver: SliverToBoxAdapter(
                       child: HeroCard(
                         signal: today.hero,
+                        falling: fallingFrom(ref.watch(cityProvider).weather?.condition),
                         onTap: today.hero == null
                             ? null
                             : () => showDetailSheet(context, today.hero!.kind),

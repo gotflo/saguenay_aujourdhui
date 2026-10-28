@@ -10,12 +10,14 @@ import 'dart:typed_data';
 import 'package:shelf/shelf.dart';
 
 import 'src/claude.dart';
+import 'src/day_line.dart';
 import 'src/limits.dart';
 import 'src/press.dart';
 import 'src/prompts.dart';
 import 'src/relay.dart';
 
 export 'src/claude.dart';
+export 'src/day_line.dart';
 export 'src/limits.dart';
 export 'src/polite.dart';
 export 'src/press.dart';
@@ -40,13 +42,16 @@ Handler assistantHandler({
   required Claude claude,
   required PressDesk press,
   Relay? relay,
+  DayLine? dayLine,
   RateLimiter? limiter,
   RateLimiter? relayLimiter,
+  RateLimiter? lineLimiter,
   Set<String> allowedOrigins = const {},
   bool trustProxy = false,
 }) {
   final limits = limiter ?? RateLimiter();
   final relayLimits = relayLimiter ?? RateLimiter(perClient: 120, perDay: 100000);
+  final lineLimits = lineLimiter ?? RateLimiter(perClient: 10, perDay: 5000);
 
   return (Request request) async {
     final cors = _cors(request.headers['origin'], allowedOrigins);
@@ -92,6 +97,9 @@ Handler assistantHandler({
           headers: {...cors, 'content-type': relayed.contentType, 'cache-control': 'no-store'},
         );
       }
+      if (dayLine != null && const {'jour', 'sms', 'voix', 'voix/adresse'}.contains(path)) {
+        return await _line(request, path, dayLine, lineLimits, trustProxy, respond, cors);
+      }
       switch ((request.method, path)) {
         case ('GET', 'sante'):
           return respond(200, {'ok': true});
@@ -128,6 +136,54 @@ Handler assistantHandler({
       return respond(503, {'erreur': 'Le service ne répond pas pour l’instant.'});
     }
   };
+}
+
+/// La journée d'une adresse : en JSON (`GET /jour?adresse=`), par texto
+/// (`POST /sms`) ou au téléphone (`POST /voix`, puis `/voix/adresse`), au
+/// format de Twilio. On limite par numéro quand il y en a un, sans le garder.
+Future<Response> _line(
+  Request request,
+  String path,
+  DayLine line,
+  RateLimiter limits,
+  bool trustProxy,
+  Response Function(int, Map<String, Object?>, [Map<String, String>]) respond,
+  Map<String, String> cors,
+) async {
+  Response xml(String body) => Response.ok(
+    body,
+    headers: {...cors, 'content-type': 'text/xml; charset=utf-8', 'cache-control': 'no-store'},
+  );
+  final form = request.method == 'POST'
+      ? Uri.splitQueryString(utf8.decode(await _readBytes(request, 8 * 1024), allowMalformed: true))
+      : const <String, String>{};
+  final from = form['From'];
+  final who = from == null || from.isEmpty
+      ? _clientOf(request, trustProxy)
+      : 'tel:${from.hashCode}';
+  if (limits.check(who) case final wait?) {
+    const busy = 'Trop de demandes. Réessaie dans quelques minutes.';
+    return switch (path) {
+      'sms' => xml(TwiML.message(busy)),
+      'voix' || 'voix/adresse' => xml(TwiML.say(busy)),
+      _ => respond(429, {'erreur': busy}, {'retry-after': '${wait.inSeconds + 1}'}),
+    };
+  }
+  switch ((request.method, path)) {
+    case ('GET', 'jour'):
+      final address = request.url.queryParameters['adresse'] ?? '';
+      if (address.trim().isEmpty) throw const _Refused(400, 'Paramètre « adresse » attendu');
+      return respond(200, {'answer': await line.reply(address)});
+    case ('POST', 'sms'):
+      return xml(TwiML.message(await line.reply(form['Body'] ?? '')));
+    case ('POST', 'voix'):
+      return xml(TwiML.ask('voix/adresse'));
+    case ('POST', 'voix/adresse'):
+      final heard = form['SpeechResult'] ?? '';
+      return xml(TwiML.say(heard.trim().isEmpty ? DayLine.help : await line.reply(heard)));
+    default:
+      return respond(404, {'erreur': 'Introuvable'});
+  }
 }
 
 Map<String, String> _cors(String? origin, Set<String> allowed) => {

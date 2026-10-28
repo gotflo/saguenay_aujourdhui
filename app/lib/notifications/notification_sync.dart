@@ -74,8 +74,9 @@ final reminderSyncProvider = Provider<void>((ref) {
   });
 });
 
-/// Signale une fois chacun les avis d'eau et les alertes météo qui touchent
-/// l'adresse.
+/// Signale une fois chacun les avis d'eau, les alertes météo, l'air mauvais,
+/// les pannes et les pointes qui touchent l'adresse, et l'eau et les pannes
+/// des autres adresses gardées.
 ///
 /// Sans serveur, ça se passe quand l'app lit les données : à l'ouverture, au
 /// retour au premier plan, et régulièrement tant qu'elle est ouverte. Les
@@ -96,11 +97,14 @@ final alertSyncProvider = Provider<void>((ref) {
     ...?prefs.getStringList('avis-signales'),
   };
   final now = ref.read(clockProvider)();
-  final due = <Alert>[
-    if (enabled.contains(ReminderKind.water))
-      ...WaterAlerts.due(place, city, now, alreadySent: sent),
-    if (enabled.contains(ReminderKind.weather)) ...WeatherAlerts.due(city, now, alreadySent: sent),
-  ];
+  final due = Alerts.due(
+    place,
+    city,
+    now,
+    enabled: enabled,
+    followed: ref.watch(followedPlacesProvider),
+    alreadySent: sent,
+  );
   if (due.isEmpty) return;
 
   unawaited(() async {

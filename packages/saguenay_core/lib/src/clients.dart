@@ -6,9 +6,11 @@ import 'package:http/http.dart' as http;
 import 'address.dart';
 import 'collection.dart';
 import 'emergency.dart';
+import 'environment.dart';
 import 'parsers/arcgis.dart';
 import 'parsers/city.dart';
 import 'parsers/eccc.dart';
+import 'parsers/environment.dart';
 import 'parsers/gtfs.dart';
 import 'parsers/gtfs_rt.dart';
 import 'parsers/hydro.dart';
@@ -365,6 +367,58 @@ class RoadsClient {
       cameras: parseCameras(_json(results[1])),
     );
   }
+
+  void close() => _client.close();
+}
+
+/// Qualité de l'air, interdictions de feux et pointes d'Hydro-Québec : trois
+/// sources publiques qui ne s'affichent que quand elles comptent.
+class EnvironmentClient {
+  EnvironmentClient({http.Client? client}) : _client = client ?? http.Client();
+
+  final http.Client _client;
+
+  /// Les deux stations de Saguenay : Parc Powell (Jonquière) et UQAC (Chicoutimi).
+  static final airUrl = Uri.https(
+    'services3.arcgis.com',
+    '/0lL78GhXbg1Po7WO/arcgis/rest/services/IQA_resultat_REST/FeatureServer/0/query',
+    {
+      'where': "NO_STATION IN ('02016','02022')",
+      'outFields': 'NO_STATION,NOM_STATION,LATITUDE,LONGITUDE,DATE_HEURE,IQA',
+      'returnGeometry': 'false',
+      'f': 'json',
+    },
+  );
+
+  static final fireUrl = Uri.https('geoegl.msp.gouv.qc.ca', '/apis/wss/complet.fcgi', {
+    'service': 'wfs',
+    'version': '1.1.0',
+    'request': 'getfeature',
+    'typename': 'msp_interdiction_feu_ciel_ouvert_ifco',
+    'outputformat': 'geojson',
+    'srsName': 'epsg:4326',
+  });
+
+  static final peaksUrl = Uri.https(
+    'donnees.hydroquebec.com',
+    '/api/explore/v2.1/catalog/datasets/evenements-pointe/records',
+    {'where': 'secteurclient="Residentiel"', 'order_by': 'datedebut desc', 'limit': '20'},
+  );
+
+  Future<AirSnapshot> air({DateTime? now}) async => AirSnapshot(
+    takenAt: now ?? DateTime.now(),
+    readings: parseAirQuality(_json(await download(_client, airUrl, maxBytes: 256 * 1024))),
+  );
+
+  Future<FireBanSnapshot> fireBans({DateTime? now}) async => FireBanSnapshot(
+    takenAt: now ?? DateTime.now(),
+    bans: parseFireBans(_json(await download(_client, fireUrl, maxBytes: 4 * 1024 * 1024))),
+  );
+
+  Future<PeakSnapshot> peaks({DateTime? now}) async => PeakSnapshot(
+    takenAt: now ?? DateTime.now(),
+    events: parsePeakEvents(_json(await download(_client, peaksUrl, maxBytes: 256 * 1024))),
+  );
 
   void close() => _client.close();
 }

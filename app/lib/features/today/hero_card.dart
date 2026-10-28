@@ -5,12 +5,16 @@ import '../../theme/colors.dart';
 import '../../theme/kind_style.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/glass.dart';
+import '../../widgets/weather_fall.dart';
 
 /// La grande carte du haut : la chose la plus importante à cette heure-ci.
 class HeroCard extends StatefulWidget {
-  const HeroCard({super.key, required this.signal, this.onTap});
+  const HeroCard({super.key, required this.signal, this.onTap, this.falling});
 
   final Signal? signal;
+
+  /// De la neige ou de la pluie derrière le texte, quand il en tombe.
+  final Falling? falling;
 
   /// Ouvre la fiche de l'information affichée.
   final VoidCallback? onTap;
@@ -44,64 +48,76 @@ class _HeroCardState extends State<HeroCard> {
     // Sur une alerte, le texte reste plein pour garder le contraste.
     final soft = s?.critical == true ? fg : fg.withValues(alpha: .82);
 
+    final falling = widget.falling;
     final card = Container(
       key: ValueKey(s?.kind ?? 'calme'),
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(28)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          Row(
-            children: [
-              Icon(s?.kind.icon ?? Icons.wb_sunny_rounded, size: 18, color: soft),
-              const SizedBox(width: 6),
-              Flexible(
-                child: Text(
-                  s?.label ?? 'Aujourd’hui',
-                  style: text.labelLarge?.copyWith(color: soft, fontWeight: FontWeight.w700),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            s?.title ?? 'Rien de spécial pour l’instant',
-            style: text.headlineSmall?.copyWith(color: fg),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            s?.body ?? 'On te fait signe si quelque chose change.',
-            style: text.bodyMedium?.copyWith(color: soft),
-          ),
-          if (s != null && s.why.isNotEmpty) ...[
-            const SizedBox(height: 14),
-            Pressable(
-              onTap: () => setState(() => _showWhy = !_showWhy),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: fg.withValues(alpha: .1),
-                  borderRadius: BorderRadius.circular(99),
-                ),
-                child: Text(
-                  _showWhy ? 'Fermer' : 'Pourquoi je vois ça ?',
-                  style: text.labelMedium?.copyWith(color: fg, fontWeight: FontWeight.w700),
-                ),
-              ),
+          if (falling != null)
+            Positioned.fill(
+              child: WeatherFall(falling: falling, color: fg),
             ),
-            AnimatedSize(
-              duration: const Duration(milliseconds: 220),
-              curve: Curves.easeOutCubic,
-              alignment: Alignment.topLeft,
-              child: _showWhy
-                  ? Padding(
-                      padding: const EdgeInsets.only(top: 10),
-                      child: Text(s.why, style: text.bodyMedium?.copyWith(color: soft)),
-                    )
-                  : const SizedBox(width: double.infinity),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(s?.kind.icon ?? Icons.wb_sunny_rounded, size: 18, color: soft),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        s?.label ?? 'Aujourd’hui',
+                        style: text.labelLarge?.copyWith(color: soft, fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  s?.title ?? 'Rien de spécial pour l’instant',
+                  style: text.headlineSmall?.copyWith(color: fg),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  s?.body ?? 'On te fait signe si quelque chose change.',
+                  style: text.bodyMedium?.copyWith(color: soft),
+                ),
+                if (s != null && s.why.isNotEmpty) ...[
+                  const SizedBox(height: 14),
+                  Pressable(
+                    onTap: () => setState(() => _showWhy = !_showWhy),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: fg.withValues(alpha: .1),
+                        borderRadius: BorderRadius.circular(99),
+                      ),
+                      child: Text(
+                        _showWhy ? 'Fermer' : 'Pourquoi je vois ça ?',
+                        style: text.labelMedium?.copyWith(color: fg, fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                  ),
+                  AnimatedSize(
+                    duration: const Duration(milliseconds: 220),
+                    curve: Curves.easeOutCubic,
+                    alignment: Alignment.topLeft,
+                    child: _showWhy
+                        ? Padding(
+                            padding: const EdgeInsets.only(top: 10),
+                            child: Text(s.why, style: text.bodyMedium?.copyWith(color: soft)),
+                          )
+                        : const SizedBox(width: double.infinity),
+                  ),
+                ],
+              ],
             ),
-          ],
+          ),
         ],
       ),
     );

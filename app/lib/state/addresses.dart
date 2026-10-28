@@ -33,6 +33,12 @@ class SavedAddresses extends Notifier<List<ResolvedAddress>> {
     await _save();
   }
 
+  /// Donne un nom à l'adresse (« Chez maman ») ; vide, on revient à l'adresse.
+  Future<void> rename(String id, String? name) async {
+    state = [for (final a in state) a.id == id ? a.named(name) : a];
+    await _save();
+  }
+
   /// Retire l'adresse. Si c'était celle affichée, on passe à une autre.
   Future<void> remove(String id) async {
     state = [...state.where((x) => x.id != id)];

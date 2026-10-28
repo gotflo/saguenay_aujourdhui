@@ -70,6 +70,18 @@ final savedPlaceProvider = Provider<Place?>((ref) {
   );
 });
 
+/// Les autres adresses gardées, sous leur nom : on veille sur elles aussi
+/// (eau, pannes), sans qu'il faille les afficher.
+final followedPlacesProvider = Provider<List<({Place place, String who})>>((ref) {
+  final id = ref.watch(placeIdProvider);
+  final water = ref.watch(waterLayerProvider).value?.snapshot;
+  final works = ref.watch(roadworksLayerProvider).value?.snapshot;
+  return [
+    for (final a in ref.watch(savedAddressesProvider))
+      if (a.id != id) (place: livePlace(a, water: water, roadworks: works), who: a.displayName),
+  ];
+});
+
 /// L'horaire des collectes de l'adresse est-il encore en lecture ?
 final placeLoadingProvider = Provider<bool>((ref) {
   final id = ref.watch(placeIdProvider);
@@ -155,6 +167,9 @@ final liveCityProvider = Provider<CityData>((ref) {
     power: ref.watch(powerProvider).value?.snapshot,
     roads: ref.watch(roadsProvider).value?.snapshot,
     transit: ref.watch(transitRealtimeProvider).value,
+    air: ref.watch(airProvider).value?.snapshot,
+    fireBans: ref.watch(fireBansProvider).value?.snapshot,
+    peaks: ref.watch(peaksProvider).value?.snapshot,
   );
 });
 
@@ -238,6 +253,7 @@ extension ReminderLabels on ReminderKind {
     ReminderKind.collection => 'Collecte',
     ReminderKind.roadwork => 'Travaux sur ma rue',
     ReminderKind.week => 'Ma semaine',
+    ReminderKind.peak => 'Pointes d’Hydro-Québec',
   };
 
   String get when => switch (this) {
@@ -248,6 +264,7 @@ extension ReminderLabels on ReminderKind {
     ReminderKind.collection => 'La veille, à 19 h',
     ReminderKind.roadwork => 'Les matins de semaine, à 6 h 45',
     ReminderKind.week => 'Le dimanche, à 18 h',
+    ReminderKind.peak => 'La veille : utile avec le Crédit hivernal ou Flex D',
   };
 }
 

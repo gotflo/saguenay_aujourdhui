@@ -313,6 +313,90 @@ class RoadsNotifier extends LiveSource<RoadReport> {
   Duration nextRefresh(DateTime now) => const Duration(minutes: 30);
 }
 
+// Air, feux et pointes -----------------------------------------------------------------
+// Trois sources qui ne s'affichent que quand elles comptent : l'air mauvais,
+// une interdiction de feux sur l'adresse, une pointe d'Hydro-Québec.
+
+final environmentClientProvider = Provider<EnvironmentClient>((ref) {
+  final client = EnvironmentClient();
+  ref.onDispose(client.close);
+  return client;
+});
+
+typedef AirStatus = LiveStatus<AirSnapshot>;
+
+final airProvider = AsyncNotifierProvider<AirNotifier, AirStatus>(AirNotifier.new);
+
+class AirNotifier extends LiveSource<AirSnapshot> {
+  @override
+  String get cacheKey => 'air';
+
+  @override
+  bool get worksOnWeb => true;
+
+  @override
+  Future<AirSnapshot> fetch() => ref.read(environmentClientProvider).air();
+
+  @override
+  Map<String, Object?> encode(AirSnapshot value) => value.toJson();
+
+  @override
+  AirSnapshot decode(Map<String, Object?> json) => AirSnapshot.fromJson(json);
+
+  /// Les stations publient une mesure par heure.
+  @override
+  Duration nextRefresh(DateTime now) => const Duration(minutes: 30);
+}
+
+typedef FireStatus = LiveStatus<FireBanSnapshot>;
+
+final fireBansProvider = AsyncNotifierProvider<FireBansNotifier, FireStatus>(FireBansNotifier.new);
+
+class FireBansNotifier extends LiveSource<FireBanSnapshot> {
+  @override
+  String get cacheKey => 'feux';
+
+  @override
+  bool get worksOnWeb => true;
+
+  @override
+  Future<FireBanSnapshot> fetch() => ref.read(environmentClientProvider).fireBans();
+
+  @override
+  Map<String, Object?> encode(FireBanSnapshot value) => value.toJson();
+
+  @override
+  FireBanSnapshot decode(Map<String, Object?> json) => FireBanSnapshot.fromJson(json);
+
+  @override
+  Duration nextRefresh(DateTime now) => const Duration(hours: 3);
+}
+
+typedef PeakStatus = LiveStatus<PeakSnapshot>;
+
+final peaksProvider = AsyncNotifierProvider<PeaksNotifier, PeakStatus>(PeaksNotifier.new);
+
+class PeaksNotifier extends LiveSource<PeakSnapshot> {
+  @override
+  String get cacheKey => 'pointes';
+
+  @override
+  bool get worksOnWeb => true;
+
+  @override
+  Future<PeakSnapshot> fetch() => ref.read(environmentClientProvider).peaks();
+
+  @override
+  Map<String, Object?> encode(PeakSnapshot value) => value.toJson();
+
+  @override
+  PeakSnapshot decode(Map<String, Object?> json) => PeakSnapshot.fromJson(json);
+
+  /// Hydro-Québec annonce ses pointes la veille.
+  @override
+  Duration nextRefresh(DateTime now) => const Duration(hours: 1);
+}
+
 // Bus en temps réel ------------------------------------------------------------------
 
 final transitRealtimeFetchProvider = Provider<Future<TransitRealtime> Function()>((ref) {
@@ -357,5 +441,8 @@ Future<void> refreshLiveSources(
     read(waterLayerProvider.notifier).refresh(force: force),
     read(roadworksLayerProvider.notifier).refresh(force: force),
     read(roadsProvider.notifier).refresh(force: force),
+    read(airProvider.notifier).refresh(force: force),
+    read(fireBansProvider.notifier).refresh(force: force),
+    read(peaksProvider.notifier).refresh(force: force),
   ]);
 }

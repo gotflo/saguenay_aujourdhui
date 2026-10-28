@@ -1,6 +1,7 @@
 import 'calendar.dart';
 import 'collection.dart';
 import 'emergency.dart';
+import 'environment.dart';
 import 'format.dart';
 import 'parking.dart';
 import 'place.dart';
@@ -21,6 +22,9 @@ class CityData {
     this.power,
     this.roads,
     this.transit,
+    this.air,
+    this.fireBans,
+    this.peaks,
   });
 
   final List<WaterNotice> waterNotices;
@@ -34,6 +38,12 @@ class CityData {
 
   /// Retards et avances des bus, en direct.
   final TransitRealtime? transit;
+
+  /// Qualité de l'air, interdictions de feux, pointes d'Hydro-Québec : rien
+  /// ne s'affiche tant que tout va bien.
+  final AirSnapshot? air;
+  final FireBanSnapshot? fireBans;
+  final PeakSnapshot? peaks;
 }
 
 class Today {
@@ -99,6 +109,9 @@ class RelevanceEngine {
       ?_water(place, city, now),
       ?_weather(city, now),
       ?_power(place, city, now),
+      ?_peak(city, now),
+      ?_air(place, city, now),
+      ?_fire(place, city),
       ?_roads(city, now),
       ?_parking(now),
       ?_collection(place, now),
@@ -420,6 +433,94 @@ class RelevanceEngine {
         label: 'Électricité',
         value: started ? 'Coupée' : 'Coupure prévue',
         detail: started ? 'jusqu’à ${clockTimeOf(end)}' : when.toLowerCase(),
+      ),
+    );
+  }
+
+  /// Une pointe d'Hydro-Québec, en cours ou dans les 36 heures.
+  Signal? _peak(CityData city, DateTime now) {
+    final e = city.peaks?.next(now);
+    if (e == null) return null;
+    final hours = 'de ${clockTimeOf(e.start)} à ${clockTimeOf(e.end)}';
+    final active = e.activeAt(now);
+    final when = active
+        ? 'En ce moment'
+        : sameDay(e.start, now)
+        ? 'Aujourd’hui'
+        : sameDay(e.start, addDays(now, 1))
+        ? 'Demain'
+        : capitalize(weekdayName(e.start));
+    return Signal(
+      kind: SignalKind.power,
+      label: when,
+      title: active
+          ? 'Pointe d’Hydro-Québec jusqu’à ${clockTimeOf(e.end)}'
+          : 'Pointe d’Hydro-Québec $hours',
+      body: active
+          ? 'Baisse le chauffage et remets à plus tard la sécheuse et le lave-vaisselle.'
+          : 'Chauffe un peu avant ${clockTimeOf(e.start)}, puis baisse le chauffage pendant la pointe.',
+      why: 'Hydro-Québec a annoncé une pointe (${e.offersLabel}) : chaque kWh économisé compte.',
+      weight: .4,
+      urgency: active
+          ? 1
+          : e.start.difference(now) <= const Duration(hours: 12)
+          ? .7
+          : .3,
+      tile: Tile(
+        kind: SignalKind.power,
+        label: 'Pointe',
+        value: active ? 'En cours' : when,
+        detail: active ? 'jusqu’à ${clockTimeOf(e.end)}' : hours,
+      ),
+    );
+  }
+
+  // Air et feux -----------------------------------------------------------------------
+
+  /// Seulement quand l'air est mauvais à la station la plus proche.
+  Signal? _air(Place place, CityData city, DateTime now) {
+    final lat = place.lat, lon = place.lon;
+    final r = (lat == null || lon == null) ? null : city.air?.nearest(lat, lon, now);
+    if (r == null || r.level != AirLevel.poor) return null;
+    return Signal(
+      kind: SignalKind.weather,
+      label: 'Qualité de l’air',
+      title: 'L’air est de mauvaise qualité',
+      body: 'Limite les efforts dehors, surtout avec de l’asthme ou un problème cardiaque.',
+      why:
+          'Indice de ${r.index} à la station ${r.shortName}, selon le ministère de l’Environnement.',
+      weight: .55,
+      urgency: 1,
+      tile: Tile(
+        kind: SignalKind.weather,
+        label: 'Air',
+        value: 'Mauvais',
+        detail: 'indice ${r.index}',
+      ),
+    );
+  }
+
+  /// Seulement quand une interdiction de feux couvre l'adresse (un chalet, par exemple).
+  Signal? _fire(Place place, CityData city) {
+    final lat = place.lat, lon = place.lon;
+    final ban = (lat == null || lon == null) ? null : city.fireBans?.at(lat, lon);
+    if (ban == null) return null;
+    final since = ban.since;
+    return Signal(
+      kind: SignalKind.weather,
+      label: 'Feux',
+      title: 'Feux à ciel ouvert interdits',
+      body: ban.description,
+      why:
+          'Le gouvernement du Québec (SOPFEU) a une interdiction en vigueur sur ce secteur'
+          '${since == null ? '' : ' depuis le ${longDate(since)}'}.',
+      weight: .4,
+      urgency: .6,
+      tile: const Tile(
+        kind: SignalKind.weather,
+        label: 'Feux',
+        value: 'Interdits',
+        detail: 'à ciel ouvert',
       ),
     );
   }

@@ -34,6 +34,15 @@ void main() {
       expect(manifest, contains('android.permission.INTERNET'));
     });
 
+    test('un lien d’adresse partagée ouvre l’app, sans passer pour une route', () {
+      expect(manifest, contains('<data android:scheme="aujourdhui" android:host="adresse" />'));
+      expect(manifest, contains('android.intent.category.BROWSABLE'));
+      expect(
+        manifest,
+        contains('<meta-data android:name="flutter_deeplinking_enabled" android:value="false" />'),
+      );
+    });
+
     test('notifications : permission, redémarrage et récepteurs', () {
       expect(manifest, contains('android.permission.POST_NOTIFICATIONS'));
       expect(manifest, contains('android.permission.RECEIVE_BOOT_COMPLETED'));
@@ -146,6 +155,10 @@ void main() {
       expect(info, contains('NSPhotoLibraryUsageDescription'));
       expect(info, contains('<string>aujourdhui</string>'));
       expect(info, contains('ITSAppUsesNonExemptEncryption'));
+    });
+
+    test('les liens sont lus par l’app, pas poussés comme des routes', () {
+      expect(info, matches(RegExp(r'<key>FlutterDeepLinkingEnabled</key>\s*<false/>')));
     });
 
     test('l’app et le widget partagent le même groupe', () {

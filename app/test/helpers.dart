@@ -10,6 +10,7 @@ import 'package:saguenay_aujourdhui/notifications/notification_sync.dart';
 import 'package:saguenay_aujourdhui/notifications/notifications.dart';
 import 'package:saguenay_aujourdhui/state/live_sources.dart';
 import 'package:saguenay_aujourdhui/state/providers.dart';
+import 'package:saguenay_aujourdhui/widgets/live_map.dart';
 import 'package:saguenay_core/saguenay_core.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -75,6 +76,33 @@ class FixedRoads extends RoadsNotifier {
 
   @override
   Future<RoadStatus> build() async => status;
+}
+
+class FixedAir extends AirNotifier {
+  FixedAir(this.status);
+
+  final AirStatus status;
+
+  @override
+  Future<AirStatus> build() async => status;
+}
+
+class FixedFireBans extends FireBansNotifier {
+  FixedFireBans(this.status);
+
+  final FireStatus status;
+
+  @override
+  Future<FireStatus> build() async => status;
+}
+
+class FixedPeaks extends PeaksNotifier {
+  FixedPeaks(this.status);
+
+  final PeakStatus status;
+
+  @override
+  Future<PeakStatus> build() async => status;
 }
 
 class FixedRealtime extends TransitRealtimeNotifier {
@@ -196,6 +224,9 @@ Future<FakeNotifications> pumpApp(
   RoadworkStatus? roadworks,
   RoadStatus? roads,
   TransitRealtime? realtime,
+  AirStatus? air,
+  FireStatus? fireBans,
+  PeakStatus? peaks,
   List<Override> extra = const [],
 }) async {
   SharedPreferences.setMockInitialValues({...prefs, 'place': ?place});
@@ -234,6 +265,14 @@ Future<FakeNotifications> pumpApp(
           () => FixedRoads(roads ?? const RoadStatus(null, SourceOrigin.none)),
         ),
         transitRealtimeProvider.overrideWith(() => FixedRealtime(realtime)),
+        airProvider.overrideWith(() => FixedAir(air ?? const AirStatus(null, SourceOrigin.none))),
+        fireBansProvider.overrideWith(
+          () => FixedFireBans(fireBans ?? const FireStatus(null, SourceOrigin.none)),
+        ),
+        peaksProvider.overrideWith(
+          () => FixedPeaks(peaks ?? const PeakStatus(null, SourceOrigin.none)),
+        ),
+        mapTilesProvider.overrideWithValue(false),
         ...extra,
       ],
       child: const SaguenayApp(googleFonts: false),

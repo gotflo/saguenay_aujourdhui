@@ -37,6 +37,15 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- Une adresse partagée par un proche : aujourdhui://adresse?... -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="aujourdhui" android:host="adresse" />
+            </intent-filter>
+            <!-- Les liens sont lus par l'app, pas poussés comme des routes. -->
+            <meta-data android:name="flutter_deeplinking_enabled" android:value="false" />
             <meta-data
                 android:name="android.app.shortcuts"
                 android:resource="@xml/shortcuts" />

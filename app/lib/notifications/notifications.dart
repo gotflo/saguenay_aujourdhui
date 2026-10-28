@@ -49,6 +49,8 @@ abstract interface class Notifications {
 /// Ce qui ouvre la bonne fiche quand on touche une notification.
 String? payloadFor(ReminderKind? kind) => switch (kind) {
   null || ReminderKind.week => null,
+  // Une pointe s'explique dans la fiche de l'électricité.
+  ReminderKind.peak => 'detail:power',
   _ => 'detail:${kind.name}',
 };
 

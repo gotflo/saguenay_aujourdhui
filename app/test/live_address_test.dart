@@ -185,6 +185,8 @@ void main() {
     await tester.tap(find.byIcon(Icons.tune_rounded));
     await settle(tester);
     await tester.scrollUntilVisible(find.text('Signaler un problème à la Ville'), 300);
+    await tester.ensureVisible(find.text('Signaler un problème à la Ville'));
+    await tester.pump();
     await tester.tap(find.text('Signaler un problème à la Ville'));
     await settle(tester);
     expect(find.byType(ReportScreen), findsOneWidget);

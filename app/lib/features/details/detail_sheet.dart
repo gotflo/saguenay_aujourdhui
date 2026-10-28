@@ -9,6 +9,7 @@ import '../assistant/plain_words.dart';
 import '../../state/providers.dart';
 import '../../state/web_relay.dart';
 import '../../theme/colors.dart';
+import '../../widgets/live_map.dart';
 import '../../widgets/sheet_parts.dart';
 
 Future<void> showDetailSheet(BuildContext context, SignalKind kind) =>
@@ -33,6 +34,7 @@ class DetailSheet extends ConsumerWidget {
         now: ref.watch(clockProvider)(),
       ),
       SignalKind.water => _WaterDetails(
+        place: place,
         city: city,
         now: now,
         takenAt: ref.watch(demoTimeProvider) != null
@@ -40,6 +42,8 @@ class DetailSheet extends ConsumerWidget {
             : ref.watch(waterLayerProvider).value?.snapshot?.takenAt,
       ),
       SignalKind.weather => _WeatherDetails(
+        place: place,
+        city: city,
         weather: city.weather,
         origin: ref.watch(demoTimeProvider) != null
             ? null
@@ -49,6 +53,7 @@ class DetailSheet extends ConsumerWidget {
       SignalKind.power => _PowerDetails(
         place: place,
         power: city.power,
+        peak: city.peaks?.next(now),
         origin: ref.watch(demoTimeProvider) != null ? null : ref.watch(powerProvider).value?.origin,
         now: now,
       ),
@@ -252,8 +257,9 @@ class _EmergencyDetails extends StatelessWidget {
 }
 
 class _WaterDetails extends StatelessWidget {
-  const _WaterDetails({required this.city, required this.now, this.takenAt});
+  const _WaterDetails({required this.place, required this.city, required this.now, this.takenAt});
 
+  final Place place;
   final CityData city;
   final DateTime now;
 
@@ -287,6 +293,7 @@ class _WaterDetails extends StatelessWidget {
               : 'Carte des avis de la Ville, relevé ${takenLabel(takenAt!, now)}',
         ),
         if (active.isEmpty && upcoming.isEmpty) const SheetNote('Aucun avis en cours ni à venir.'),
+        ?_map(context, [...active, ...upcoming]),
         if (active.isNotEmpty) ...[const SectionLabel('En cours'), for (final n in active) row(n)],
         if (upcoming.isNotEmpty) ...[
           const SectionLabel('À venir'),
@@ -303,6 +310,36 @@ class _WaterDetails extends StatelessWidget {
             'est levé à cette date.',
           ),
       ],
+    );
+  }
+}
+
+extension on _WaterDetails {
+  /// La carte des zones proches, avec l'adresse : on voit tout de suite si sa
+  /// rue est dedans. Rien si aucun avis n'est à moins de trois kilomètres : la
+  /// liste suffit, et une carte de toute la ville ne montrerait que des points.
+  Widget? _map(BuildContext context, List<WaterNotice> notices) {
+    final c = context.colors;
+    final lat = place.lat, lon = place.lon;
+    if (lat == null || lon == null) return null;
+    final drawn = [
+      for (final n in notices)
+        if (n.rings.isNotEmpty &&
+            (n.covers(lat, lon) || distanceToPaths(n.rings, lat, lon) < 3000))
+          n,
+    ];
+    if (drawn.isEmpty) return null;
+    return Padding(
+      padding: const EdgeInsets.only(top: 6, bottom: 4),
+      child: LiveMap(
+        lat: lat,
+        lon: lon,
+        zones: [
+          for (final n in drawn)
+            (rings: n.rings, color: n.type == WaterNoticeType.boil ? c.red : c.blue),
+        ],
+        semanticLabel: 'Carte des avis sur l’eau autour de ton adresse',
+      ),
     );
   }
 }
@@ -399,7 +436,20 @@ class _RoadworkDetails extends StatelessWidget {
         const SheetHeader('Travaux', subtitle: 'Près de chez toi'),
         if (works.isEmpty)
           const SheetNote('Aucuns travaux près de chez toi.')
-        else
+        else ...[
+          if ((place.lat, place.lon) case (
+            final lat?,
+            final lon?,
+          ) when works.any((w) => w.work.paths.isNotEmpty))
+            Padding(
+              padding: const EdgeInsets.only(top: 6, bottom: 4),
+              child: LiveMap(
+                lat: lat,
+                lon: lon,
+                paths: [for (final w in works) ...w.work.paths],
+                semanticLabel: 'Carte des chantiers près de ton adresse',
+              ),
+            ),
           for (final w in works)
             SheetRow(
               title: '${w.work.street}, ${w.work.status}',
@@ -407,14 +457,23 @@ class _RoadworkDetails extends StatelessWidget {
                   ? w.work.details
                   : 'Dans ton arrondissement. ${w.work.details}',
             ),
+        ],
       ],
     );
   }
 }
 
 class _WeatherDetails extends StatelessWidget {
-  const _WeatherDetails({required this.weather, required this.origin, required this.now});
+  const _WeatherDetails({
+    required this.place,
+    required this.city,
+    required this.weather,
+    required this.origin,
+    required this.now,
+  });
 
+  final Place place;
+  final CityData city;
   final WeatherSnapshot? weather;
 
   /// `null` en démo.
@@ -470,10 +529,13 @@ class _WeatherDetails extends StatelessWidget {
           ),
         ] else
           const SheetNote('Aucune alerte pour ton secteur.'),
+        ..._environment(context),
         Padding(
           padding: const EdgeInsets.only(top: 12),
           child: Text(
-            'Source : Environnement et Changement climatique Canada.',
+            'Sources : Environnement et Changement climatique Canada ; qualité de l’air, '
+            'ministère de l’Environnement du Québec ; feux, ministère de la Sécurité '
+            'intérieure et SOPFEU.',
             style: text.bodySmall,
           ),
         ),
@@ -482,16 +544,41 @@ class _WeatherDetails extends StatelessWidget {
   }
 }
 
+extension on _WeatherDetails {
+  /// La qualité de l'air à la station la plus proche, et l'interdiction de
+  /// feux si l'adresse est dans une zone visée.
+  List<Widget> _environment(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    final lat = place.lat, lon = place.lon;
+    if (lat == null || lon == null) return const [];
+    final air = city.air?.nearest(lat, lon, now);
+    final ban = city.fireBans?.at(lat, lon);
+    return [
+      if (air != null)
+        SheetRow(
+          title: 'Qualité de l’air : ${air.level.label.toLowerCase()}',
+          subtitle: 'Station ${air.shortName}, ${clockTimeOf(air.at)}',
+          trailing: Text('${air.index}', style: text.titleMedium),
+        ),
+      if (ban != null) SheetRow(title: 'Feux à ciel ouvert interdits', subtitle: ban.description),
+    ];
+  }
+}
+
 class _PowerDetails extends StatelessWidget {
   const _PowerDetails({
     required this.place,
     required this.power,
+    required this.peak,
     required this.origin,
     required this.now,
   });
 
   final Place place;
   final PowerSnapshot? power;
+
+  /// La pointe d'Hydro-Québec en cours ou à venir, s'il y en a une.
+  final PeakEvent? peak;
   final SourceOrigin? origin;
   final DateTime now;
 
@@ -546,6 +633,20 @@ class _PowerDetails extends StatelessWidget {
         if (planned.isNotEmpty) ...[
           const SectionLabel('Planifiées'),
           for (final o in planned) SheetRow(title: 'Travaux d’Hydro-Québec', subtitle: hours(o)),
+        ],
+        if (peak case final e?) ...[
+          const SectionLabel('Pointe de consommation'),
+          SheetRow(
+            title: e.activeAt(now)
+                ? 'En cours jusqu’à ${clockTimeOf(e.end)}'
+                : '${capitalize(sameDay(e.start, now) ? 'aujourd’hui' : shortDate(e.start))}, '
+                      'de ${clockTimeOf(e.start)} à ${clockTimeOf(e.end)}',
+            subtitle: e.offersLabel,
+          ),
+          const SheetNote(
+            'Pour les clients inscrits au Crédit hivernal ou au tarif Flex D : chauffe un peu '
+            'avant, puis baisse le chauffage et reporte la lessive pendant la pointe.',
+          ),
         ],
         const SheetNote(
           'Le secteur d’une panne est approximatif : Hydro-Québec donne un point, pas les rues touchées.',

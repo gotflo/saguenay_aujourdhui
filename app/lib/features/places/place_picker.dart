@@ -6,10 +6,12 @@ import 'package:saguenay_core/saguenay_core.dart';
 
 import '../../notifications/notification_sync.dart';
 import '../../state/addresses.dart';
+import '../../state/launch.dart';
 import '../../state/providers.dart';
 import '../../theme/colors.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/sheet_parts.dart';
+import 'address_sharing.dart';
 
 /// Ce qu'on dit de chaque adresse de démo.
 const placeHints = {
@@ -23,7 +25,10 @@ Future<void> showPlacePicker(BuildContext context) => showAppSheet<void>(context
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      const SheetHeader('Tes adresses', subtitle: 'Elles restent sur ce téléphone.'),
+      const SheetHeader(
+        'Tes adresses',
+        subtitle: 'Elles restent sur ce téléphone. On veille sur chacune : eau et pannes.',
+      ),
       SavedAddressList(onChosen: done),
       const SectionLabel('Ajouter une adresse'),
       AddressSearch(onChosen: done),
@@ -74,6 +79,14 @@ class _AddressSearchState extends ConsumerState<AddressSearch> {
 
   void _changed(String text) {
     _debounce?.cancel();
+    // Un lien d'adresse collé ici fait comme s'il avait été ouvert.
+    final link = Uri.tryParse(text.trim());
+    if (link != null && link.scheme == 'aujourdhui') {
+      ref.read(incomingAddressProvider.notifier).receive(link);
+      _field.clear();
+      setState(() => _state = _SearchState.idle);
+      return;
+    }
     if (text.trim().length < 3) {
       setState(() => _state = _SearchState.idle);
       return;
@@ -238,8 +251,8 @@ class SavedAddressList extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.only(bottom: 10),
             child: PlaceOption(
-              title: a.label,
-              hint: a.sector,
+              title: a.displayName,
+              hint: a.name == null ? a.sector : a.label,
               selected: a.id == current,
               onCard: onCard,
               onTap: () => chooseAddress(
@@ -247,10 +260,19 @@ class SavedAddressList extends ConsumerWidget {
                 a.id,
                 onChosen: onChosen,
               ),
-              trailing: IconButton(
-                tooltip: 'Retirer cette adresse',
-                icon: Icon(Icons.close_rounded, color: c.ink3),
-                onPressed: () => ref.read(savedAddressesProvider.notifier).remove(a.id),
+              trailing: PopupMenuButton<_AddressAction>(
+                tooltip: 'Nommer, partager ou retirer',
+                icon: Icon(Icons.more_horiz_rounded, color: c.ink3),
+                onSelected: (action) => switch (action) {
+                  _AddressAction.rename => showRenameSheet(context, a),
+                  _AddressAction.share => shareAddress(a),
+                  _AddressAction.remove => ref.read(savedAddressesProvider.notifier).remove(a.id),
+                },
+                itemBuilder: (_) => const [
+                  PopupMenuItem(value: _AddressAction.rename, child: Text('Nommer')),
+                  PopupMenuItem(value: _AddressAction.share, child: Text('Partager')),
+                  PopupMenuItem(value: _AddressAction.remove, child: Text('Retirer')),
+                ],
               ),
             ),
           ),
@@ -258,6 +280,8 @@ class SavedAddressList extends ConsumerWidget {
     );
   }
 }
+
+enum _AddressAction { rename, share, remove }
 
 /// Les trois adresses de démo.
 class PlaceList extends ConsumerWidget {

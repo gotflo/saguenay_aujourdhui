@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'features/places/address_sharing.dart';
 import 'features/today/today_screen.dart';
 import 'features/welcome/welcome_screen.dart';
 import 'home_widget/widget_sync.dart';
@@ -45,7 +46,9 @@ class _SaguenayAppState extends ConsumerState<SaguenayApp> {
     final widget = ref.read(homeScreenWidgetProvider);
     _subscriptions
       ..add(notifications.taps.listen((p) => launch.open(kindFromLaunch(p))))
-      ..add(widget.clicks.listen((uri) => launch.open(kindFromLaunch(uri?.toString()))));
+      ..add(widget.clicks.listen((uri) => launch.open(kindFromLaunch(uri?.toString()))))
+      // Une adresse partagée par un proche.
+      ..add(ref.read(appLinksProvider).listen(ref.read(incomingAddressProvider.notifier).receive));
     unawaited(() async {
       try {
         final payload = await notifications.launchPayload();
@@ -84,10 +87,12 @@ class _SaguenayAppState extends ConsumerState<SaguenayApp> {
       locale: const Locale('fr', 'CA'),
       supportedLocales: const [Locale('fr', 'CA'), Locale('fr')],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      home: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 350),
-        switchInCurve: Curves.easeOutCubic,
-        child: hasPlace ? const TodayScreen() : const WelcomeScreen(),
+      home: SharedAddressListener(
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 350),
+          switchInCurve: Curves.easeOutCubic,
+          child: hasPlace ? const TodayScreen() : const WelcomeScreen(),
+        ),
       ),
     );
   }

@@ -30,3 +30,10 @@ jobs:
       - name: Version web
         working-directory: app
         run: flutter build web --release
+      - name: Image Docker du serveur
+        run: |
+          docker build -f server/Dockerfile -t saguenay-assistant .
+          docker run -d --name assistant -p 8080:8080 saguenay-assistant
+          for i in 1 2 3 4 5 6 7 8 9 10; do curl -sf localhost:8080/sante && break; sleep 2; done
+          curl -sf localhost:8080/sante | grep '"ok":true'
+          docker logs assistant
