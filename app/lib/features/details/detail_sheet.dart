@@ -324,8 +324,7 @@ extension on _WaterDetails {
     if (lat == null || lon == null) return null;
     final drawn = [
       for (final n in notices)
-        if (n.rings.isNotEmpty &&
-            (n.covers(lat, lon) || distanceToPaths(n.rings, lat, lon) < 3000))
+        if (n.rings.isNotEmpty && (n.covers(lat, lon) || distanceToPaths(n.rings, lat, lon) < 3000))
           n,
     ];
     if (drawn.isEmpty) return null;

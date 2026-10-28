@@ -6,9 +6,11 @@ import 'package:flutter/material.dart';
 enum Falling { snow, rain }
 
 /// « Neige légère », « Pluie faible », « Averses de neige »... La neige passe
-/// en premier : « pluie et neige » se voit comme de la neige.
+/// en premier : « pluie et neige » se voit comme de la neige. Une prévision
+/// (« possibilité d'averses », « risque de neige ») ne fait rien tomber.
 Falling? fallingFrom(String? condition) {
   final c = condition?.toLowerCase() ?? '';
+  if (c.contains('possibilit') || c.contains('risque') || c.contains('probabilit')) return null;
   if (c.contains('neige') || c.contains('poudrerie') || c.contains('flocon')) return Falling.snow;
   if (c.contains('pluie') ||
       c.contains('averse') ||
@@ -93,7 +95,7 @@ class _FallPainter extends CustomPainter {
     final t = clock.value;
     final snow = falling == Falling.snow;
     final paint = Paint()
-      ..color = color.withValues(alpha: snow ? .28 : .22)
+      ..color = color.withValues(alpha: snow ? .26 : .14)
       ..strokeCap = StrokeCap.round
       ..strokeWidth = 1.4;
     for (final d in drops) {

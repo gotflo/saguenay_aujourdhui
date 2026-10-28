@@ -157,7 +157,6 @@ void main() {
   });
 
   group('adresses suivies', () {
-
     test('le nom voyage avec l’adresse, sans changer son identifiant', () {
       final back = ResolvedAddress.fromJson(
         jsonDecode(jsonEncode(maman.toJson())) as Map<String, Object?>,

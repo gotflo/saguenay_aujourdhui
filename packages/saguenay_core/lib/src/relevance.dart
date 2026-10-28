@@ -7,6 +7,7 @@ import 'parking.dart';
 import 'place.dart';
 import 'power.dart';
 import 'roads.dart';
+import 'roadwork.dart';
 import 'signal.dart';
 import 'transit.dart';
 import 'water.dart';
@@ -894,22 +895,32 @@ class RelevanceEngine {
 
   // Travaux --------------------------------------------------------------------
 
+  /// Plusieurs chantiers sur une même rue ne font qu'une information : le plus
+  /// contraignant (une rue fermée avant un contresens), avec leur nombre.
   Iterable<Signal> _roadworks(Place place, DateTime now) sync* {
     final rush = isRushHour(now);
+    final byStreet = <String, List<NearbyRoadwork>>{};
     for (final nearby in place.roadworks) {
-      final work = nearby.work;
-      if (!work.activeAt(now)) continue;
+      if (nearby.work.activeAt(now)) {
+        byStreet.putIfAbsent(nearby.work.street, () => []).add(nearby);
+      }
+    }
+    for (final group in byStreet.values) {
+      group.sort((a, b) => _hindrance(b.work.status).compareTo(_hindrance(a.work.status)));
+      final work = group.first.work;
+      final onMyStreet = group.any((n) => n.onMyStreet);
+      final count = group.length > 1 ? '${group.length} chantiers sur cette rue. ' : '';
       yield Signal(
         kind: SignalKind.roadwork,
         label: rush ? 'Sur ta route' : 'Travaux',
         title: '${work.street}, ${work.status}',
-        body: work.details,
-        why: nearby.onMyStreet
+        body: '$count${work.details}'.trim(),
+        why: onMyStreet
             ? (rush
                   ? 'Des travaux sur ta rue, à l’heure où tu pars.'
                   : 'Des travaux sur ta rue ou juste à côté.')
             : 'Des travaux ailleurs dans ton arrondissement.',
-        weight: .45 * (nearby.onMyStreet ? 1 : .4),
+        weight: .45 * (onMyStreet ? 1 : .4),
         urgency: rush ? 1 : .5,
         tile: Tile(
           kind: SignalKind.roadwork,
@@ -920,6 +931,14 @@ class RelevanceEngine {
       );
     }
   }
+}
+
+/// Une rue fermée gêne plus qu'un contresens, qui gêne plus qu'une entrave.
+int _hindrance(String status) {
+  final s = status.toLowerCase();
+  if (s.contains('ferm')) return 3;
+  if (s.contains('contresens')) return 2;
+  return 1;
 }
 
 // Le widget demande des milliers de calculs d'affilée. Créer une date locale

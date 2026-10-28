@@ -27,6 +27,36 @@ void main() {
     expect(today.tiles.first.kind, SignalKind.roadwork);
   });
 
+  test('trois chantiers sur une même rue : une seule tuile, la plus contraignante', () {
+    Roadwork work(String status) => Roadwork(
+      street: 'Boulevard Saguenay Est',
+      shortName: 'Saguenay Est',
+      status: status,
+      details: 'Travaux d’aqueduc.',
+      start: DateTime(2026, 10, 1),
+      end: DateTime(2026, 12, 1),
+    );
+    final place = Place(
+      id: 'tache',
+      label: '517, rue Taché',
+      shortLabel: 'Taché',
+      collection: const CollectionSchedule({}),
+      roadworks: [
+        NearbyRoadwork(work('à contresens'), onMyStreet: false),
+        NearbyRoadwork(work('fermée'), onMyStreet: true),
+        NearbyRoadwork(work('fermée'), onMyStreet: false),
+      ],
+    );
+    final today = engine.today(place, const CityData(), DateTime(2026, 10, 28, 18, 15));
+    final works = today.signals.where((s) => s.kind == SignalKind.roadwork).toList();
+    expect(works, hasLength(1));
+    expect(works.single.title, 'Boulevard Saguenay Est, fermée');
+    expect(works.single.body, '3 chantiers sur cette rue. Travaux d’aqueduc.');
+    // En haut ou en tuile, la rue n'apparaît qu'une fois.
+    final shown = [?today.hero?.kind, ...today.tiles.map((t) => t.kind)];
+    expect(shown.where((k) => k == SignalKind.roadwork), hasLength(1));
+  });
+
   test('en semaine à 7 h 35 : le prochain bus de l’arrêt favori', () {
     final today = at('racine', DateTime(2026, 11, 18, 7, 35));
     expect(today.hero?.title, 'Le 105 passe dans 11 min');

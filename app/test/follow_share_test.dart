@@ -154,6 +154,9 @@ void main() {
     expect(fallingFrom('Pluie faible'), Falling.rain);
     expect(fallingFrom('Averses'), Falling.rain);
     expect(fallingFrom('Nuageux'), isNull);
+    expect(fallingFrom('Possibilité d’averses'), isNull);
+    expect(fallingFrom("possibilité d'averses"), isNull);
+    expect(fallingFrom('Risque de neige'), isNull);
     expect(fallingFrom(null), isNull);
   });
 
