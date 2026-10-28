@@ -11,6 +11,10 @@ jobs:
     name: Cœur, serveur et app
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # Les tests décrivent des heures de Saguenay (« pointe de 6 h à 10 h ») :
+    # la machine est à l'heure de Saguenay, comme les téléphones et le serveur.
+    env:
+      TZ: America/Toronto
     steps:
       - uses: actions/checkout@v5
       - uses: subosito/flutter-action@v2
