@@ -347,7 +347,7 @@ footer a{color:var(--ink-2)}
   <div class="wrap split">
     <h2>Pourquoi j’ai fait ça</h2>
     <div class="prose">
-      <p>Toutes ces informations existent déjà. La Ville publie l’horaire des collectes et ses avis d’aqueduc, la STS ses horaires, le ministère l’état des urgences, Environnement Canada ses alertes, Hydro-Québec ses pannes. Mais pour savoir quoi faire ce soir, il faut aller voir à huit endroits.</p>
+      <p>Toutes ces informations existent déjà. La Ville publie l’horaire des collectes et ses avis d’aqueduc, la STS ses horaires, le ministère l’état des urgences, Environnement Canada ses alertes, Hydro-Québec ses pannes et ses pointes, le ministère de l’Environnement la qualité de l’air. Mais pour savoir quoi faire ce soir, il faut aller voir à une douzaine d’endroits.</p>
       <p>Je voulais une seule place qui fait le tri à ma place. Pas une app de plus qu’on oublie d’ouvrir : <b>un widget sur l’écran d’accueil, qui change selon l’heure.</b> À 21 h en hiver, il rappelle de déplacer l’auto. La veille de la collecte, il parle du bac. S’il y a un avis d’ébullition dans ton secteur, ça passe avant tout le reste.</p>
       <p>Le widget connaît déjà les sept prochains jours et change de lui-même, à la minute près. Sans réseau, il continue, et les rappels aussi.</p>
       <p>Il n’y a pas de magie là-dedans, juste des règles simples qu’on peut expliquer à n’importe qui. Et l’app ne sait rien de toi à part ton adresse, qu’elle garde sur ton téléphone.</p>
@@ -364,7 +364,7 @@ footer a{color:var(--ink-2)}
       <p class="later">Pas encore possible : savoir quand la déneigeuse passe dans ta rue. Les camions ont un GPS, mais rien n’est public pour l’instant. C’est une des choses que je vais demander.</p>
       <div class="offline-grid">
         <div><h3>Marche sans réseau</h3><ul><li>Stationnement, collectes de ton adresse, trois semaines d’horaire du bus, travaux connus</li><li>Coupures d’eau et de courant déjà annoncées</li><li>Le widget, pour sept jours, et tous les rappels</li></ul></div>
-        <div><h3>A besoin du réseau</h3><ul><li>Météo et alertes</li><li>Pannes, routes et urgences</li><li>Retards du bus</li></ul><p class="later" style="margin-top:10px;font-size:14.5px">Sans réseau, l’app montre le dernier relevé avec son heure.</p></div>
+        <div><h3>A besoin du réseau</h3><ul><li>Météo et alertes</li><li>Pannes, routes et urgences</li><li>Qualité de l’air et feux</li><li>Retards du bus</li></ul><p class="later" style="margin-top:10px;font-size:14.5px">Sans réseau, l’app montre le dernier relevé avec son heure.</p></div>
       </div>
     </div>
   </div>
@@ -508,7 +508,7 @@ const BUS={semaine:[["06:46","105","La Baie"],["06:47","10","UQAC"],["07:16","10
   samedi:[7,8,9,10,11,12,13,14,15,16,17,18].map(h=>[pad(h)+":17","10","UQAC"]),
   dimanche:[8,9,10,11,12,13,14,15,16,17].map(h=>[pad(h)+":17","10","UQAC"])};
 const URG=[{nom:"Chicoutimi",occ:34,fct:41,pres:40,att:2},{nom:"Jonquière",occ:9,fct:16,pres:17,att:10},{nom:"La Baie",occ:4,fct:7,pres:6,att:2}];
-const COLOR={avis:"var(--red)",park:"var(--orange)",coll:"var(--green)",bus:"var(--blue)",entr:"var(--orange)",urg:"var(--violet)",eau:"var(--blue)",meteo:"var(--slate)",power:"var(--pink)",routes:"var(--stone)"};
+const COLOR={avis:"var(--red)",park:"var(--orange)",coll:"var(--green)",bus:"var(--blue)",entr:"var(--orange)",urg:"var(--violet)",eau:"var(--blue)",meteo:"var(--slate)",power:"var(--pink)",routes:"var(--stone)",air:"var(--green)",feux:"var(--red)",pointe:"var(--violet)"};
 const ICON={
   bin:'<path d="M5 7h14M9.5 7V4.5h5V7M7 7l1 13h8l1-13"/>',
   car:'<path d="M4.5 16.5v-4l2-5h11l2 5v4M4.5 16.5h15M5 16.5v2h2.5v-2M16.5 16.5v2H19v-2M4.5 12.5h15"/>',
@@ -532,6 +532,9 @@ const ICON={
   mail:'<rect x="3.5" y="5.5" width="17" height="13" rx="2.5"/><path d="M4 7l8 6 8-6"/>',
   cloud:'<path d="M7.5 18.5h9a4 4 0 0 0 1.2-7.8A6 6 0 0 0 7 9.2 4.7 4.7 0 0 0 7.5 18.5z"/>',
   bolt:'<path d="M13 3L5.5 13.5H11L10 21l8-11h-5.5z"/>',
+  wind:'<path d="M3 9h11a3 3 0 1 0-3-3M3 15h15a3 3 0 1 1-3 3M3 12h8"/>',
+  flame:'<path d="M12 21a6 6 0 0 0 6-6c0-4-3-6-4-10-2 2-3 4-3 6-1-1-2-2-2-4-2 2-3 5-3 8a6 6 0 0 0 6 6z"/>',
+  heart:'<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>',
   off:'<path d="M7.5 18.5h9a4 4 0 0 0 1.2-7.8A6 6 0 0 0 7 9.2 4.7 4.7 0 0 0 7.5 18.5zM4 4l16 16"/>'
 };
 const svg=(k,cls="ico")=>`<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[k]}</svg>`;
@@ -734,8 +737,8 @@ function sheetHTML(a,t){
     h=`<h4>Électricité</h4><p class="sub">${c?"Mise en situation pour la démo":"Hydro-Québec"}</p>`+(c?`<p class="also" style="margin:14px 0 2px">Planifiée</p><div class="li"><span>Travaux d’Hydro-Québec<small>${cap(shortDay(Math.floor(c.deb/1440)))}, de ${hm(c.deb%1440)} à ${hm(c.fin%1440)} · ${c.clients} clients</small></span></div>`:`<p class="fine">Aucune panne ni coupure planifiée dans ton secteur.</p>`)+`<p class="fine">Le secteur d’une panne est approximatif : Hydro-Québec donne un point, pas les rues touchées.</p>`;}
   else if(S.sheet==="sources"){
     const live=S.off?"Hors ligne : dernier relevé gardé":"En direct sur le téléphone";
-    const rows=[["park","car","Stationnement de nuit","Règlement de la Ville · calculé sur le téléphone"],["coll","bin","Collectes","Calendrier de la Ville, pour ton adresse · relu chaque semaine"],["bus","bus","Bus","Horaire et retards de la STS · "+live],["entr","cone","Travaux","Carte de circulation de la Ville · "+live],["eau","drop","Avis d’eau","Carte des avis de la Ville, zone par zone · "+live],["meteo","cloud","Météo","Environnement Canada · "+live],["power","bolt","Électricité","Hydro-Québec · "+live],["urg","plus","Urgences","Ministère de la Santé · "+live],["routes","map","Routes","Québec 511, état des routes et caméras · "+live]];
-    h=`<h4>Neuf sources, une seule app</h4><p class="sub">Avant, il fallait les consulter une par une.</p>`+rows.map(([k,i,n,d])=>`<div class="src" style="--c:${COLOR[k]}"><span class="ic">${svg(i)}</span><span><b>${n}</b><small>${d}</small></span></div>`).join("")+`<p class="fine">Ce qui est calculé sur le téléphone marche sans réseau, et le widget aussi : il connaît déjà les sept prochains jours.</p>`;}
+    const rows=[["park","car","Stationnement de nuit","Règlement de la Ville · calculé sur le téléphone"],["coll","bin","Collectes","Calendrier de la Ville, pour ton adresse · relu chaque semaine"],["bus","bus","Bus","Horaire et retards de la STS · "+live],["entr","cone","Travaux","Carte de circulation de la Ville · "+live],["eau","drop","Avis d’eau","Carte des avis de la Ville, zone par zone · "+live],["meteo","cloud","Météo","Environnement Canada · "+live],["power","bolt","Électricité","Hydro-Québec · "+live],["urg","plus","Urgences","Ministère de la Santé · "+live],["routes","map","Routes","Québec 511, état des routes et caméras · "+live],["air","wind","Qualité de l’air","Stations Parc Powell et UQAC · seulement si l’air est mauvais"],["feux","flame","Feux à ciel ouvert","Interdictions de la SOPFEU · seulement si ton adresse est visée"],["pointe","bolt","Pointes d’hiver","Hydro-Québec, la veille · pour le Crédit hivernal ou Flex D"]];
+    h=`<h4>Douze sources, une seule app</h4><p class="sub">Avant, il fallait les consulter une par une.</p>`+rows.map(([k,i,n,d])=>`<div class="src" style="--c:${COLOR[k]}"><span class="ic">${svg(i)}</span><span><b>${n}</b><small>${d}</small></span></div>`).join("")+`<p class="fine">Ce qui est calculé sur le téléphone marche sans réseau, et le widget aussi : il connaît déjà les sept prochains jours.</p>`;}
   else if(S.sheet==="entr"){const list=a.entr.map(x=>ENTR[x.id]).filter(e=>t<at(e.fin));h=`<h4>Travaux</h4><p class="sub">Près de chez toi</p>`+list.map(e=>`<div class="li"><span>${e.rue}<small>${e.det}</small></span></div>`).join("");}
   return `<div class="sheet-bg" data-close><div class="sheet" role="dialog" aria-label="Détails"><div class="grab"></div>${h}</div></div>`;
 }
@@ -763,13 +766,16 @@ function render(){
 const LIST=[
   ["bin","var(--green)","Collectes","Quel bac, quel jour, pour n’importe quelle adresse, avec un rappel la veille.","Branché · accord de la Ville demandé",false],
   ["car","var(--orange)","Stationnement de nuit","Un rappel les soirs où c’est interdit, du 15 novembre au 1er avril.","Prêt",true],
-  ["drop","var(--red)","Eau","Les avis d’ébullition et les coupures dont la zone touche ton adresse.","Branché · accord de la Ville demandé",false],
+  ["drop","var(--red)","Eau","Les avis d’ébullition et les coupures dont la zone touche ton adresse, sur une carte.","Branché · accord de la Ville demandé",false],
   ["cone","var(--orange)","Travaux","Les rues fermées ou en alternance près de chez toi.","Prêt",true],
   ["bus","var(--blue)","Bus","Les prochains départs de ton arrêt, avec les retards en direct.","Branché · licence de la STS demandée",false],
   ["plus","var(--violet)","Urgences","L’achalandage à Chicoutimi, Jonquière et La Baie, mis à jour chaque heure.","Prêt",true],
   ["cloud","var(--slate)","Météo et alertes","La température, la neige annoncée cette nuit, les avertissements d’Environnement Canada.","Prêt",true],
   ["bolt","var(--pink)","Électricité","Les pannes dans ton secteur et les coupures planifiées par Hydro-Québec, la veille au soir.","Prêt",true],
   ["map","var(--stone)","Routes","L’état des routes 175, 170 et 172, et les caméras de Québec 511.","Prêt",true],
+  ["wind","var(--green)","Air, feux et pointes","Un air mauvais, une interdiction de feux sur ton secteur, une pointe d’Hydro-Québec la veille : seulement quand ça te touche.","Prêt",true],
+  ["heart","var(--red)","Tes proches","Donne un nom à l’adresse de tes parents ou du chalet : leurs avis d’eau et leurs pannes t’arrivent sous ce nom. Partage une adresse par texto, sans compte.","Prêt",true],
+  ["phone","var(--slate)","Sans téléphone intelligent","On texte son adresse, ou on la dit au téléphone, et on reçoit sa journée en quelques phrases.","Prêt · numéro à obtenir",false],
   ["msg","var(--green)","Demande à l’app","« Ça va où ? », ta collecte, ton bus : des réponses tirées de ton adresse, même sans réseau. En ligne, une photo suffit.","Prêt",true]
 ];
 $("#list").innerHTML=LIST.map(([i,c,n,d,s,ok])=>`<div class="item"><span class="dot" style="--c:${c}">${svg(i)}</span><div><h3>${n}</h3><p>${d}</p></div><span class="state${ok?" ok":""}">${s}</span></div>`).join("");

@@ -19,9 +19,14 @@ widget d'écran d'accueil suffit.
     <td align="center"><img src="docs/captures/assistant.png" width="230" alt="Demande à l'app : le tri et le calendrier des collectes"><br><sub>Demande à l'app</sub></td>
     <td align="center"><img src="docs/captures/widget.png" width="230" alt="Le widget sur l'écran d'accueil Android"><br><sub>Le widget, qui change tout seul</sub></td>
   </tr>
+  <tr>
+    <td align="center"><img src="docs/captures/partage.png" width="230" alt="Une adresse reçue par lien : on lui donne un nom avant de l'ajouter"><br><sub>Une adresse partagée, sans compte</sub></td>
+    <td align="center"><img src="docs/captures/proches.png" width="230" alt="La liste des adresses : Chez mes parents, suivie en arrière-plan"><br><sub>Veiller sur un proche</sub></td>
+    <td align="center"><img src="docs/captures/carte-eau.png" width="230" alt="La fiche de l'eau : la zone d'un avis sur une carte, avec l'adresse"><br><sub>La zone d'un avis, sur une carte</sub></td>
+  </tr>
 </table>
 
-<sub>Captures faites sur un émulateur Android, version de production, le 25 octobre 2026.</sub>
+<sub>Captures faites sur un émulateur Android, version de production, les 25 et 28 octobre 2026.</sub>
 
 ## Pourquoi
 
