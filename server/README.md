@@ -6,7 +6,7 @@ elle n'est jamais dans l'app.
 
 | Demande | Ce qu'elle fait |
 |---|---|
-| `POST /question` `{question, context}` | Répond à une question en langage naturel. `context` est ce que l'app affiche pour le secteur ; seuls les champs connus sont relayés, jamais l'adresse. |
+| `POST /question` `{question, context, historique}` | Répond à une question en langage naturel. `context` est ce que l'app sait pour le secteur ; seuls les champs connus sont relayés, jamais l'adresse. `historique` : les échanges d'avant, quatre au plus, pour comprendre une suite. Les communiqués déjà résumés accompagnent la question. |
 | `POST /tri` `{image}` | « Ça va où ? » d'après une photo (JPEG, PNG ou WebP en base64, 5 Mo au plus), avec les règles de tri de la Ville dans la consigne. |
 | `POST /expliquer` `{texte}` | Réécrit un texte officiel (alerte, avis) en langage simple. |
 | `GET /communiques` | Les cinq derniers communiqués de la salle des médias de la Ville, chacun résumé à partir de son PDF. |

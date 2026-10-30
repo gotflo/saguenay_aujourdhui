@@ -24,6 +24,7 @@ WeatherSnapshot parseCityWeather(
     condition: condition is String && condition.trim().isNotEmpty ? condition.trim() : null,
     snowTonightCm: _tonight(forecasts),
     alerts: alerts,
+    forecast: _outlook(forecasts),
   );
 }
 
@@ -60,6 +61,16 @@ List<WeatherAlert> parseWeatherAlerts(Map<String, Object?> json, {required DateT
   final out = byName.values.toList()..sort((a, b) => a.level.index.compareTo(b.level.index));
   return out;
 }
+
+/// Les prochaines périodes du bulletin, pour répondre sur les jours à venir.
+List<String> _outlook(List<Object?> forecasts) => [
+  for (final f in forecasts.take(8))
+    if ((_fr(_map(_map(f)?['period'])?['textForecastName']), _fr(_map(f)?['textSummary'])) case (
+      final String name,
+      final String text,
+    ))
+      '$name : $text',
+];
 
 /// La neige annoncée pour la période « ce soir et cette nuit », d'après le
 /// texte du bulletin : « Neige. Accumulation de 10 à 15 cm. »

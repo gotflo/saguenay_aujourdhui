@@ -93,6 +93,13 @@ class PressDesk {
   final _summaries = <Uri, String>{};
   Future<List<Map<String, Object?>>>? _pending;
 
+  /// Les communiqués déjà résumés, sans rien lire ni rien payer de plus : ce
+  /// que l'assistant peut citer en répondant à une question.
+  List<String> known() => [
+    for (final r in (_list ?? const <PressRelease>[]).take(count))
+      if (_summaries[r.url] case final summary?) '${r.title} (${isoDate(r.issued)}) : $summary',
+  ];
+
   /// Les derniers communiqués avec leur résumé. Les demandes simultanées
   /// partagent le même travail.
   Future<List<Map<String, Object?>>> latest() =>

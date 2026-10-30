@@ -54,7 +54,12 @@ class PressNote {
 abstract interface class RemoteAssistant {
   bool get available;
 
-  Future<String> ask(String question, Map<String, Object?> context);
+  /// `history` : les questions et réponses d'avant, pour comprendre une suite.
+  Future<String> ask(
+    String question,
+    Map<String, Object?> context, {
+    List<Map<String, String>> history = const [],
+  });
 
   /// « Ça va où ? » à partir d'une photo de l'objet.
   Future<String> sortPhoto(Uint8List jpeg);
@@ -75,7 +80,11 @@ class NoRemoteAssistant implements RemoteAssistant {
   bool get available => false;
 
   @override
-  Future<String> ask(String question, Map<String, Object?> context) async => _off();
+  Future<String> ask(
+    String question,
+    Map<String, Object?> context, {
+    List<Map<String, String>> history = const [],
+  }) async => _off();
 
   @override
   Future<String> sortPhoto(Uint8List jpeg) async => _off();
@@ -85,6 +94,11 @@ class NoRemoteAssistant implements RemoteAssistant {
 
   @override
   Future<List<PressNote>> pressReleases() async => _off();
+}
+
+/// Le serveur dit d'attendre : trop de demandes de cet appareil.
+class RemoteBusy implements Exception {
+  const RemoteBusy();
 }
 
 class HttpRemoteAssistant implements RemoteAssistant {
@@ -97,6 +111,7 @@ class HttpRemoteAssistant implements RemoteAssistant {
   bool get available => true;
 
   Object? _decode(http.Response response, Uri url) {
+    if (response.statusCode == 429) throw const RemoteBusy();
     if (response.statusCode != 200) {
       throw http.ClientException('Réponse ${response.statusCode}', url);
     }
@@ -107,7 +122,8 @@ class HttpRemoteAssistant implements RemoteAssistant {
     final url = base.resolve(path);
     final response = await _client
         .post(url, headers: {'Content-Type': 'application/json'}, body: jsonEncode(body))
-        .timeout(const Duration(seconds: 40));
+        // Plus long que le délai du serveur, qui a lui-même une réponse à donner.
+        .timeout(const Duration(seconds: 70));
     final json = _decode(response, url);
     final text = json is Map ? json['answer'] : null;
     if (text is! String || text.trim().isEmpty) throw const FormatException('Réponse vide');
@@ -115,8 +131,11 @@ class HttpRemoteAssistant implements RemoteAssistant {
   }
 
   @override
-  Future<String> ask(String question, Map<String, Object?> context) =>
-      _post('question', {'question': question, 'context': context});
+  Future<String> ask(
+    String question,
+    Map<String, Object?> context, {
+    List<Map<String, String>> history = const [],
+  }) => _post('question', {'question': question, 'context': context, 'historique': history});
 
   @override
   Future<String> sortPhoto(Uint8List jpeg) => _post('tri', {'image': base64Encode(jpeg)});
@@ -142,14 +161,6 @@ final remoteAssistantProvider = Provider<RemoteAssistant>((ref) {
 });
 
 /// Ce que l'app envoie à l'assistant en ligne : le secteur et ce qu'elle
-/// affiche, jamais l'adresse.
-Map<String, Object?> assistantContext(Place place, CityData city, DateTime now) {
-  final today = const RelevanceEngine().today(place, city, now);
-  return {
-    'secteur': place.sector ?? 'Saguenay',
-    'moment': '${longDate(now)}, ${clockTimeOf(now)}',
-    'carte': today.hero == null ? null : '${today.hero!.title}. ${today.hero!.body}',
-    'tuiles': [for (final t in today.tiles) '${t.label} : ${t.value} (${t.detail})'],
-    'semaine': const Agenda().week(place, city, now).summary(max: 6),
-  };
-}
+/// sait pour lui, jamais l'adresse.
+Map<String, Object?> assistantContext(Place place, CityData city, DateTime now) =>
+    const LocalAssistant().briefing(place, city, now);

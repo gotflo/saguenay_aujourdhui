@@ -84,14 +84,180 @@ void main() {
     });
 
     test('urgences : les chiffres, avec la mise en garde', () {
-      final a = ask('Il y a combien d’attente à l’urgence ?');
+      final a = ask('Quel hôpital est le moins plein ?');
       expect(a.text, contains('Chicoutimi 83 %'));
       expect(a.text, contains('911'));
+    });
+
+    test('urgences : sans chiffres, pas de phrase vide', () {
+      final a = ask('Les urgences ?', city: const CityData());
+      expect(a.text, startsWith('Je n’ai pas les chiffres'));
+      expect(a.text, contains('911'));
+    });
+
+    test('le bac nommé d’abord', () {
+      expect(ask('Quand passe le bac brun ?').text, startsWith('Compost'));
+      expect(ask('Le compost, c’est quand ?').text, startsWith('Compost'));
+      expect(ask('Les ordures passent quand ?').text, startsWith('Ordures'));
     });
 
     test('ce qui n’est pas compris le dit', () {
       final a = ask('Quelle est la capitale du Pérou ?');
       expect(a.understood, isFalse);
+    });
+  });
+
+  group('qui répond', () {
+    void local(List<String> questions) {
+      for (final q in questions) {
+        expect(ask(q).understood, isTrue, reason: q);
+      }
+    }
+
+    void online(List<String> questions) {
+      for (final q in questions) {
+        expect(ask(q).understood, isFalse, reason: q);
+      }
+    }
+
+    test('ce que l’app sait dire seule reste sur le téléphone', () {
+      local([
+        'Le bac, c’est quand ?',
+        'Quel jour passe le compost ?',
+        'Est-ce que je sors mes vidanges ce soir ?',
+        'Je peux me stationner sur ma rue ce soir ?',
+        'Interdit de stationner cette nuit ?',
+        'L’eau est-elle bonne à boire ?',
+        'Puis-je boire l’eau ?',
+        'Prochain bus ?',
+        'À quelle heure passe le bus ?',
+        'Va-t-il neiger cette nuit ?',
+        'Il va pleuvoir ?',
+        'Météo ?',
+        'Il y a une panne ?',
+        'Y a-t-il des coupures d’électricité ?',
+        'Comment est la route 175 ?',
+        'Il y a des travaux près de chez moi ?',
+        'Il y a quoi demain ?',
+        'Une canette, ça va où ?',
+        'Où jeter des piles ?',
+        'Bonjour',
+      ]);
+    });
+
+    test('une explication, un prix, un numéro : en ligne, jamais « Oui » à côté', () {
+      online([
+        'Pourquoi faire bouillir l’eau pendant une minute ?',
+        'C’est quoi un avis d’ébullition ?',
+        'Pourquoi je n’ai pas le droit de me stationner l’hiver ?',
+        'Combien coûte le bus ?',
+        'Comment fonctionne le bac brun ?',
+        'Quel est le numéro de la Ville ?',
+        'Mon bac n’a pas été ramassé, je fais quoi ?',
+        'Où stationner pendant l’interdiction de nuit ?',
+        'Quand passe la déneigeuse ?',
+        'Où est l’hôpital de Jonquière ?',
+      ]);
+    });
+
+    test('un état que l’app n’a pas : en ligne', () {
+      online([
+        'Mon eau est brune, c’est normal ?',
+        'Ma facture d’Hydro est trop élevée',
+        'Le bus est-il gratuit pour les étudiants ?',
+        'Mon bac est brisé',
+        'Il y a une urgence vétérinaire ?',
+        'Je veux acheter du bacon',
+      ]);
+    });
+
+    test('un autre jour, un autre endroit, un autre trajet : en ligne', () {
+      online([
+        'Va-t-il neiger samedi ?',
+        'Quelle température demain ?',
+        'Je peux me garer samedi prochain ?',
+        'Il y a une panne à Jonquière ?',
+        'L’eau est bonne à La Baie ?',
+        'Le bus 10 passe à quelle heure dimanche ?',
+        'Quel bus pour aller à l’UQAC ?',
+        'Comment est la route 170 ?',
+      ]);
+    });
+
+    test('une suite dépend de la question d’avant', () {
+      online(['Et demain ?', 'Et pour le bac brun ?']);
+    });
+
+    test('deux sujets : en ligne, et les deux réponses si le réseau manque', () {
+      final a = ask('Je sors le bac et je peux stationner dans la rue ce soir ?');
+      expect(a.understood, isFalse);
+      expect(a.text, contains('cette nuit'));
+      expect(a.text, contains('Sors le bac bleu'));
+    });
+
+    test('un objet inconnu part en ligne au lieu de redemander l’objet', () {
+      final a = ask('Ça va où, un vieux matelas ?');
+      expect(a.understood, isFalse);
+      expect(a.text, isNot(contains('Dis-moi l’objet')));
+      expect(ask('L’eau goûte le chlore').text, isNot(contains('écocentre')));
+    });
+
+    test('la fiche du sujet reste proposée avec la réponse en ligne', () {
+      expect(ask('Pourquoi faire bouillir l’eau ?').kind, SignalKind.water);
+    });
+  });
+
+  group('danger', () {
+    test('le 911 d’abord, sans réseau et sans passer par l’assistant en ligne', () {
+      for (final q in [
+        'Mon père ne respire plus',
+        'J’ai très mal à la poitrine',
+        'Je sens une odeur de gaz chez moi',
+        'Il y a le feu chez mon voisin',
+        'Mon enfant s’étouffe',
+        'Ma voisine a fait une chute, elle saigne beaucoup',
+      ]) {
+        final a = ask(q);
+        expect(a.understood, isTrue, reason: q);
+        expect(a.text, startsWith('Appelle le 911'), reason: q);
+      }
+    });
+
+    test('la détresse : une ligne d’aide, tout de suite', () {
+      for (final q in ['Je veux me suicider', 'J’ai des idées noires, je veux en finir']) {
+        final a = ask(q);
+        expect(a.understood, isTrue, reason: q);
+        expect(a.text, contains('1 866 APPELLE'), reason: q);
+        expect(a.text, contains('911'), reason: q);
+      }
+    });
+
+    test('un feu de camp n’appelle pas le 911', () {
+      expect(ask('Puis-je faire un feu dans ma cour ?').text, isNot(contains('911')));
+    });
+  });
+
+  group('ce qui part en ligne', () {
+    test('le secteur et les états, jamais l’adresse ni « ta rue »', () {
+      final b = assistant.briefing(racine, Demo.city, DateTime(2026, 10, 26, 18));
+      expect(b['secteur'], 'Chicoutimi');
+      expect(b['eau'], contains('Aucun avis'));
+      expect(b['stationnement'], contains('15 novembre'));
+      expect(b['collectes'], startsWith('Recyclage demain'));
+      final all = b.toString();
+      expect(all, isNot(contains('201')));
+      expect(all, isNot(contains('ta rue')));
+    });
+
+    test('les prévisions du bulletin suivent', () {
+      final city = CityData(
+        weather: WeatherSnapshot(
+          takenAt: DateTime(2026, 10, 26, 17),
+          forecast: const ['Samedi : Neige. Maximum moins 2.'],
+        ),
+      );
+      final b = assistant.briefing(racine, city, DateTime(2026, 10, 26, 18));
+      expect(b['previsions'], ['Samedi : Neige. Maximum moins 2.']);
     });
   });
 

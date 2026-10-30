@@ -80,6 +80,8 @@ void main() {
       expect(w.condition, 'Généralement ensoleillé');
       expect(w.snowTonightCm, 15);
       expect(w.takenAt, DateTime.utc(2026, 10, 25, 19, 5, 21).toLocal());
+      expect(w.forecast.first, 'Aujourd\'hui : Généralement ensoleillé. Maximum 15.');
+      expect(WeatherSnapshot.fromJson(w.toJson()).forecast, w.forecast);
     });
 
     test('la neige en centimètres, dans les tournures du bulletin', () {

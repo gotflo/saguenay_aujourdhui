@@ -115,7 +115,10 @@ Handler assistantHandler({
           }
           final body = await _readJson(request, path == 'tri' ? 8 * 1024 * 1024 : 32 * 1024);
           final answer = await switch (path) {
-            'question' => claude.reply(system: questionPrompt, content: questionContent(body)),
+            'question' => claude.reply(
+              system: questionPrompt,
+              content: questionContent(body, press: press.known()),
+            ),
             'tri' => claude.reply(system: sortingPrompt, content: photoContent(body)),
             _ => claude.reply(system: plainPrompt, content: plainContent(body)),
           };
@@ -239,9 +242,27 @@ const _contextFields = {
   'carte': 'Carte du haut',
   'tuiles': 'Tuiles',
   'semaine': 'La semaine',
+  'eau': 'Eau',
+  'stationnement': 'Stationnement',
+  'collectes': 'Collectes',
+  'bus': 'Bus',
+  'meteo': 'Météo',
+  'previsions': 'Prévisions',
+  'pannes': 'Pannes',
+  'routes': 'Routes',
+  'travaux': 'Travaux',
+  'urgences': 'Urgences',
+  'air': 'Qualité de l’air',
+  'feux': 'Feux à ciel ouvert',
+  'pointes': 'Pointes d’Hydro-Québec',
 };
 
+const maxExchanges = 4;
+
 String _clip(String s, int max) => s.length > max ? '${s.substring(0, max)}…' : s;
+
+/// Ce que dit la personne ou une source ne peut pas fermer une balise.
+String _inert(String s) => s.replaceAll('<', '‹').replaceAll('>', '›');
 
 /// Le contexte envoyé par l'app, réduit aux champs connus et borné.
 String contextText(Object? raw) {
@@ -249,27 +270,44 @@ String contextText(Object? raw) {
   final lines = <String>[
     for (final MapEntry(:key, value: label) in _contextFields.entries)
       if (raw[key] case final String v when v.trim().isNotEmpty)
-        '$label : ${_clip(v.trim(), 400)}'
+        '$label : ${_inert(_clip(v.trim(), 400))}'
       else if (raw[key] case final List<Object?> items when items.isNotEmpty)
         '$label : ${[for (final i in items.take(12))
-          if (i is String) _clip(i, 200)].join(' ; ')}',
+          if (i is String) _inert(_clip(i, 200))].join(' ; ')}',
   ];
   return lines.isEmpty ? 'Aucun contexte.' : lines.join('\n');
 }
 
-List<Map<String, Object?>> questionContent(Map<String, Object?> body) {
-  final question = _text(body, 'question', maxQuestion);
+/// Les questions d'avant, bornées, pour comprendre une suite comme « Et demain ? ».
+String exchangesText(Object? raw) => [
+  if (raw is List)
+    for (final e in raw.skip(raw.length > maxExchanges ? raw.length - maxExchanges : 0))
+      if (e is Map && e['question'] is String && e['reponse'] is String)
+        'Question : ${_inert(_clip(e['question'] as String, maxQuestion))}\n'
+            'Réponse : ${_inert(_clip(e['reponse'] as String, 500))}',
+].join('\n');
+
+List<Map<String, Object?>> questionContent(
+  Map<String, Object?> body, {
+  List<String> press = const [],
+}) {
+  final question = _inert(_text(body, 'question', maxQuestion));
+  final exchanges = exchangesText(body['historique']);
   return [
     {
       'type': 'text',
-      'text':
-          '<contexte>\n${contextText(body['context'])}\n</contexte>\n\n<question>\n$question\n</question>',
+      'text': [
+        '<contexte>\n${contextText(body['context'])}\n</contexte>',
+        if (press.isNotEmpty) '<communiques>\n${_inert(press.join('\n'))}\n</communiques>',
+        if (exchanges.isNotEmpty) '<echanges>\n$exchanges\n</echanges>',
+        '<question>\n$question\n</question>',
+      ].join('\n\n'),
     },
   ];
 }
 
 List<Map<String, Object?>> plainContent(Map<String, Object?> body) => [
-  {'type': 'text', 'text': '<texte>\n${_text(body, 'texte', maxText)}\n</texte>'},
+  {'type': 'text', 'text': '<texte>\n${_inert(_text(body, 'texte', maxText))}\n</texte>'},
 ];
 
 List<Map<String, Object?>> photoContent(Map<String, Object?> body) {

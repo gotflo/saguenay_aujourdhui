@@ -56,7 +56,13 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
     final now = ref.read(nowProvider);
     final ex = _Exchange(question);
     final local = const LocalAssistant().answer(question, place, city, now);
+    // Les questions d'avant, pour comprendre une suite comme « Et demain ? ».
+    final history = [
+      for (final e in _exchanges)
+        if (e.answer case final answer?) {'question': e.question, 'reponse': answer},
+    ];
     setState(() => _exchanges.add(ex));
+    _toEnd();
 
     final remote = ref.read(remoteAssistantProvider);
     if (remote.available && _aboutPress.hasMatch(question)) {
@@ -65,8 +71,15 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
       setState(() => _busy = true);
       try {
         ex
-          ..answer = await remote.ask(question, assistantContext(place, city, now))
-          ..online = true;
+          ..answer = await remote.ask(
+            question,
+            assistantContext(place, city, now),
+            history: history.length > 4 ? history.sublist(history.length - 4) : history,
+          )
+          ..online = true
+          ..kind = local.kind;
+      } on RemoteBusy {
+        ex.answer = 'Beaucoup de questions en peu de temps. Réessaie dans quelques minutes.';
       } on Object {
         ex.answer = '${local.text}\n\nL’assistant en ligne ne répond pas pour l’instant.';
       } finally {
@@ -119,6 +132,7 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
         ..kind = SignalKind.collection;
     } on Object {
       ex.answer = 'Je n’ai pas pu analyser la photo. Décris l’objet en quelques mots.';
+      ex.kind = null;
     } finally {
       if (mounted) setState(() => _busy = false);
     }

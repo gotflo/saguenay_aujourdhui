@@ -52,14 +52,20 @@ List<Override> liveAddress({Future<CollectionSchedule> Function(ResolvedAddress)
 
 class FakeRemote implements RemoteAssistant {
   final asked = <(String, Map<String, Object?>)>[];
+  final histories = <List<Map<String, String>>>[];
   final explained = <String>[];
 
   @override
   bool get available => true;
 
   @override
-  Future<String> ask(String question, Map<String, Object?> context) async {
+  Future<String> ask(
+    String question,
+    Map<String, Object?> context, {
+    List<Map<String, String>> history = const [],
+  }) async {
     asked.add((question, context));
+    histories.add(history);
     return 'Réponse de l’assistant en ligne.';
   }
 
@@ -251,6 +257,32 @@ void main() {
       expect(question, 'Où faire réparer mon vélo ?');
       expect(context['secteur'], 'Chicoutimi');
       expect(jsonEncode(context), isNot(contains('201')));
+    });
+
+    testWidgets('une explication part au serveur, avec la fiche et la question d’avant', (
+      tester,
+    ) async {
+      final remote = FakeRemote();
+      await pumpApp(
+        tester,
+        place: 'racine',
+        extra: [remoteAssistantProvider.overrideWithValue(remote)],
+      );
+      await tester.tap(find.byIcon(Icons.chat_bubble_outline_rounded));
+      await settle(tester);
+      await tester.enterText(find.byType(TextField), 'L’eau est-elle bonne à boire ?');
+      await tester.testTextInput.receiveAction(TextInputAction.send);
+      await settle(tester);
+      expect(remote.asked, isEmpty);
+
+      await tester.enterText(find.byType(TextField), 'Pourquoi faire bouillir l’eau ?');
+      await tester.testTextInput.receiveAction(TextInputAction.send);
+      await settle(tester);
+      expect(find.text('Réponse de l’assistant en ligne.'), findsOneWidget);
+      expect(find.text('Voir la fiche'), findsNWidgets(2));
+      final history = remote.histories.single.single;
+      expect(history['question'], 'L’eau est-elle bonne à boire ?');
+      expect(history['reponse'], contains('Aucun avis'));
     });
 
     testWidgets('l’alerte météo en mots simples', (tester) async {

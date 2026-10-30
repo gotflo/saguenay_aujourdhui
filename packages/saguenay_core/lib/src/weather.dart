@@ -76,6 +76,7 @@ class WeatherSnapshot {
     this.condition,
     this.snowTonightCm,
     this.alerts = const [],
+    this.forecast = const [],
   });
 
   factory WeatherSnapshot.fromJson(Map<String, Object?> json) => WeatherSnapshot(
@@ -87,6 +88,7 @@ class WeatherSnapshot {
       for (final a in (json['alerts'] as List?) ?? const [])
         WeatherAlert.fromJson((a as Map).cast<String, Object?>()),
     ],
+    forecast: [for (final f in (json['forecast'] as List?) ?? const []) '$f'],
   );
 
   final DateTime takenAt;
@@ -99,6 +101,9 @@ class WeatherSnapshot {
   final int? snowTonightCm;
   final List<WeatherAlert> alerts;
 
+  /// Les prochaines périodes du bulletin : « Samedi : Neige. Maximum moins 2. »
+  final List<String> forecast;
+
   /// La température d'il y a plus de trois heures ne veut plus dire grand-chose.
   bool isStaleAt(DateTime now) => now.difference(takenAt) > const Duration(hours: 3);
 
@@ -108,5 +113,6 @@ class WeatherSnapshot {
     'condition': condition,
     'snowTonightCm': snowTonightCm,
     'alerts': [for (final a in alerts) a.toJson()],
+    'forecast': forecast,
   };
 }

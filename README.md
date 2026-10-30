@@ -247,7 +247,7 @@ cd server && dart test
 cd app && flutter test
 ```
 
-347 tests : les règles et le moteur, la suite du widget (minute exacte, nuit du changement d'heure,
+368 tests : les règles et le moteur, la suite du widget (minute exacte, nuit du changement d'heure,
 temps de calcul), les lecteurs de chaque source sur leurs vraies réponses enregistrées, y compris
 abîmées, trop grosses ou trop lentes ; les parcours de l'app, les notifications, la tâche de fond,
 l'affichage sur quatre tailles d'écran, les adresses suivies et partagées, le bus près de soi ; la configuration Android

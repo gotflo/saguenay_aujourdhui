@@ -26,3 +26,6 @@ Saguenay-Aujourdhui-coordonnees.pptx
 
 # Le site de la démo, généré par prototype/site.sh
 site/
+
+# Verrou de PowerPoint pendant qu’un fichier est ouvert
+~$*
