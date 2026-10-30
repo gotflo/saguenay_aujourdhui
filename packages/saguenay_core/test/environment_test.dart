@@ -279,6 +279,7 @@ void main() {
     test('court, sans symboles, avec la prochaine collecte', () {
       final text = DaySummary.text(racine, Demo.city, DateTime(2026, 10, 26, 19, 30));
       expect(text, isNot(endsWith('…')));
+      expect(text, contains('Stationnement permis cette nuit.'));
       expect(text.length, lessThanOrEqualTo(DaySummary.maxLength));
       expect(text, startsWith('201, rue Racine Est : '));
       expect(text, isNot(contains('..')));
