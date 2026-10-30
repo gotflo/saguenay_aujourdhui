@@ -23,3 +23,6 @@ local.properties
 
 # Présentation avec courriel et téléphone : reste sur le poste
 Saguenay-Aujourdhui-coordonnees.pptx
+
+# Le site de la démo, généré par prototype/site.sh
+site/
