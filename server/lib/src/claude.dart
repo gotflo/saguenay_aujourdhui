@@ -112,7 +112,8 @@ class HttpClaude implements Claude {
           block['text'] as String,
     ].join().trim();
     if (text.isEmpty) throw const ClaudeUnavailable('réponse vide');
-    return text;
+    // L'app affiche du texte brut : pas de ligne vide avant la source.
+    return text.replaceAll(RegExp(r'\n\s*\n+'), '\n');
   }
 
   void close() => _client.close();

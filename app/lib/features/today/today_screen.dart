@@ -310,22 +310,25 @@ class _Greeting extends ConsumerWidget {
                 ),
               ),
             ],
-            const SizedBox(width: 10),
-            Pressable(
-              onTap: () => showMomentsSheet(context),
-              semanticLabel: 'Mode démo. Rejouer un moment',
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: c.accentSoft,
-                  borderRadius: BorderRadius.circular(99),
-                ),
-                child: Text(
-                  'Démo',
-                  style: text.labelSmall?.copyWith(color: c.ink, fontWeight: FontWeight.w700),
+            // La démo se lance depuis les Réglages : ici, seulement quand elle joue.
+            if (frozen) ...[
+              const SizedBox(width: 10),
+              Pressable(
+                onTap: () => showMomentsSheet(context),
+                semanticLabel: 'Mode démo. Rejouer un moment',
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: c.accentSoft,
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                  child: Text(
+                    'Démo',
+                    style: text.labelSmall?.copyWith(color: c.ink, fontWeight: FontWeight.w700),
+                  ),
                 ),
               ),
-            ),
+            ],
           ],
         ),
       ],
