@@ -10,6 +10,7 @@ import 'signal.dart';
 abstract final class DaySummary {
   /// Au-delà, un texto accentué coûte un segment de plus.
   static const maxLength = 320;
+  static const maxDetail = 110;
 
   static String text(Place place, CityData city, DateTime now, {String? name}) {
     final today = const RelevanceEngine().today(place, city, now);
@@ -17,7 +18,9 @@ abstract final class DaySummary {
     final parts = <String>[
       hero == null
           ? '${name ?? place.label} : rien de spécial pour l’instant.'
-          : '${name ?? place.label} : ${_sentence(hero.title)} ${_sentence(hero.body)}',
+          : '${name ?? place.label} : ${_sentence(hero.title)}'
+                // Un long détail de chantier ne prend pas la place du reste de la journée.
+                '${hero.body.length > maxDetail ? '' : ' ${_sentence(hero.body)}'}',
       // Deux autres informations qui comptent, sans les tuiles « tout va bien ».
       for (final s in today.signals.where((s) => !identical(s, hero) && s.score >= 20).take(2))
         _sentence(s.title),
