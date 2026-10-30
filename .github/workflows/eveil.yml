@@ -1,0 +1,17 @@
+# Garde le serveur de Render éveillé : à chaque réveil, il résumerait de nouveau
+# les communiqués avec la clé d'API et son plafond quotidien repartirait à zéro.
+name: Serveur éveillé
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  appel:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - run: curl --fail --silent --show-error --max-time 120 --retry 2 https://saguenay-aujourdhui.onrender.com/sante
