@@ -5,6 +5,11 @@
     <!-- Rappels et widget à la minute près. Android 14 et plus demandent l'accord de
          l'utilisateur : sans lui, tout marche quand même, avec quelques minutes de jeu. -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <!-- Les arrêts de bus près de soi, au choix : la position n'est lue que pendant
+         l'utilisation de l'app et reste sur le téléphone. Ni ACCESS_BACKGROUND_LOCATION
+         ni FOREGROUND_SERVICE_LOCATION : elle ne peut pas être lue en arrière-plan. -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <!-- L'adresse ne quitte pas le téléphone : pas de sauvegarde ni de transfert. Toutes
          les connexions sont chiffrées. -->
     <application

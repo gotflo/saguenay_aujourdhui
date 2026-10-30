@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../theme/colors.dart';
 import 'addresses.dart';
 import 'live_sources.dart';
+import 'position.dart';
 import 'web_relay.dart';
 
 /// Remplacé dans `main()` une fois les préférences chargées.
@@ -90,13 +91,17 @@ final placeLoadingProvider = Provider<bool>((ref) {
 });
 
 /// L'adresse affichée : celle du moment rejoué en démo, sinon l'adresse choisie.
+/// Hors de chez soi, son arrêt devient celui de l'endroit où l'on est ; le
+/// widget et les rappels, eux, gardent l'arrêt de l'adresse.
 final placeProvider = Provider<Place?>((ref) {
   final moment = ref.watch(demoMomentProvider);
   if (moment != null && ref.watch(demoTimeProvider) != null) {
     final demo = ref.watch(placesProvider).where((p) => p.id == moment.placeId).firstOrNull;
     if (demo != null) return demo;
   }
-  return ref.watch(savedPlaceProvider);
+  final saved = ref.watch(savedPlaceProvider);
+  final nearby = ref.watch(nearbyStopProvider);
+  return saved == null || nearby == null ? saved : saved.withStop(nearby);
 });
 
 // Heure ----------------------------------------------------------------------

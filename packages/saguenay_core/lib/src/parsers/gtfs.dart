@@ -68,21 +68,37 @@ class GtfsFeed {
 
   /// Les arrêts à moins de [withinMeters], du plus proche au plus loin. Les
   /// deux côtés de la rue comptent : on garde les deux sens.
-  List<GtfsStop> nearestStops(double lat, double lon, {int max = 2, double withinMeters = 600}) {
-    final scored = [for (final s in stops) (distanceKm(lat, lon, s.lat, s.lon) * 1000, s)]
-      ..sort((a, b) => a.$1.compareTo(b.$1));
-    return [
-      for (final (d, s) in scored.take(max))
-        if (d <= withinMeters) s,
-    ];
-  }
+  List<GtfsStop> nearestStops(double lat, double lon, {int max = 2, double withinMeters = 600}) =>
+      nearestOf(stops, lat, lon, max: max, withinMeters: withinMeters);
 
   /// L'horaire de ces arrêts, date par date.
   StopSchedule schedule(List<GtfsStop> at, {required DateTime from, int days = 60}) {
-    final ids = {for (final s in at) s.id};
     final first = dayNumber(from);
     final last = math.min(first + days, dayNumber(validTo));
+    return StopSchedule(
+      name: at.isEmpty ? '' : at.first.name,
+      validFrom: dateFromDayNumber(first),
+      validTo: dateFromDayNumber(last),
+      byDate: _departures({for (final s in at) s.id}, first, last),
+    );
+  }
 
+  /// Les départs de tous les arrêts pour la journée de [from] : de quoi
+  /// trouver l'arrêt le plus proche partout en ville sans relire le flux à
+  /// chaque pas.
+  TransitDay day(DateTime from) {
+    final d = dayNumber(from);
+    final byStop = <String, List<Departure>>{};
+    if (d <= dayNumber(validTo)) {
+      for (final dep in _departures(null, d, d)[d] ?? const <Departure>[]) {
+        byStop.putIfAbsent(dep.stopId ?? '', () => []).add(dep);
+      }
+    }
+    return TransitDay(date: dateFromDayNumber(d), stops: stops, byStop: byStop);
+  }
+
+  /// Les départs de ces arrêts (de tous si [ids] est nul), date par date.
+  Map<int, List<Departure>> _departures(Set<String>? ids, int first, int last) {
     final routes = {
       for (final r in _rows(_files['routes.txt']!))
         r['route_id']: r['route_short_name'] ?? r['route_id'],
@@ -105,7 +121,8 @@ class GtfsFeed {
     }
 
     final byDate = <int, List<Departure>>{};
-    for (final st in _rows(_files['stop_times.txt']!, keep: (r) => ids.contains(r['stop_id']))) {
+    final keep = ids == null ? null : (Map<String, String> r) => ids.contains(r['stop_id']);
+    for (final st in _rows(_files['stop_times.txt']!, keep: keep)) {
       final trip = trips[st['trip_id']];
       final minute = _minutes(st['departure_time'] ?? st['arrival_time']);
       if (trip == null || minute == null) continue;
@@ -129,11 +146,51 @@ class GtfsFeed {
     for (final list in byDate.values) {
       list.sort((a, b) => a.minute.compareTo(b.minute));
     }
+    return byDate;
+  }
+}
+
+/// Les arrêts à moins de [withinMeters] d'un point, du plus proche au plus loin.
+List<GtfsStop> nearestOf(
+  List<GtfsStop> stops,
+  double lat,
+  double lon, {
+  int max = 2,
+  double withinMeters = 600,
+}) {
+  final scored = [for (final s in stops) (distanceKm(lat, lon, s.lat, s.lon) * 1000, s)]
+    ..sort((a, b) => a.$1.compareTo(b.$1));
+  return [
+    for (final (d, s) in scored.take(max))
+      if (d <= withinMeters) s,
+  ];
+}
+
+/// Une journée de départs pour tous les arrêts de la STS. Calculée une fois
+/// par jour sur le téléphone ; trouver les arrêts proches d'une position ne
+/// coûte ensuite presque rien, et la position ne quitte jamais le téléphone.
+class TransitDay {
+  const TransitDay({required this.date, required this.stops, required this.byStop});
+
+  final DateTime date;
+  final List<GtfsStop> stops;
+
+  /// Identifiant de l'arrêt → départs triés.
+  final Map<String, List<Departure>> byStop;
+
+  /// L'horaire des deux arrêts les plus proches de ce point (les deux côtés
+  /// de la rue), ou `null` s'il n'y en a pas à moins de 600 m.
+  StopSchedule? around(double lat, double lon) {
+    final near = nearestOf(stops, lat, lon);
+    if (near.isEmpty) return null;
+    final departures = [for (final s in near) ...?byStop[s.id]]
+      ..sort((a, b) => a.minute.compareTo(b.minute));
     return StopSchedule(
-      name: at.isEmpty ? '' : at.first.name,
-      validFrom: dateFromDayNumber(first),
-      validTo: dateFromDayNumber(last),
-      byDate: byDate,
+      name: near.first.name,
+      validFrom: date,
+      validTo: date,
+      byDate: {dayNumber(date): departures},
+      aroundYou: true,
     );
   }
 }

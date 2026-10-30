@@ -90,6 +90,24 @@ class SourcesSheet extends ConsumerWidget {
         ),
       ),
       (
+        SignalKind.weather,
+        'Qualité de l’air',
+        'Ministère de l’Environnement',
+        live<AirSnapshot>(ref.watch(airProvider).value, (a) => a.takenAt),
+      ),
+      (
+        SignalKind.weather,
+        'Feux à ciel ouvert',
+        'SOPFEU et ministère de la Sécurité intérieure',
+        live<FireBanSnapshot>(ref.watch(fireBansProvider).value, (f) => f.takenAt),
+      ),
+      (
+        SignalKind.power,
+        'Pointes d’hiver',
+        'Hydro-Québec',
+        live<PeakSnapshot>(ref.watch(peaksProvider).value, (p) => p.takenAt),
+      ),
+      (
         SignalKind.roads,
         'Routes',
         'Ministère des Transports',
@@ -112,7 +130,7 @@ class SourcesSheet extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SheetHeader(
-          'Neuf sources, une seule app',
+          'Douze sources, une seule app',
           subtitle: 'Avant, il fallait les consulter une par une.',
         ),
         for (final (kind, title, source, state) in rows)
@@ -139,8 +157,9 @@ class SourcesSheet extends ConsumerWidget {
           'façon. Leur accord est demandé avant la sortie publique.',
         ),
         const SheetNote(
-          'Licences : Données Québec, ministère de la Santé et ministère des Transports (CC BY 4.0), '
-          'Environnement Canada (Licence du gouvernement ouvert), Hydro-Québec (CC BY-NC 4.0).',
+          'Licences : Données Québec, ministères de la Santé, des Transports et de l’Environnement '
+          '(CC BY 4.0), Environnement Canada (Licence du gouvernement ouvert), Hydro-Québec '
+          '(CC BY-NC 4.0). Cartes © OpenStreetMap (ODbL).',
         ),
       ],
     );

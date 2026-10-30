@@ -202,7 +202,7 @@ void main() {
     await tester.scrollUntilVisible(find.text('D’où viennent ces infos ?'), 300);
     await tester.tap(find.text('D’où viennent ces infos ?'));
     await settle(tester);
-    expect(find.text('Neuf sources, une seule app'), findsOneWidget);
+    expect(find.text('Douze sources, une seule app'), findsOneWidget);
     expect(find.textContaining('calculé sur le téléphone'), findsWidgets);
   });
 

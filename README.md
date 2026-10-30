@@ -61,6 +61,9 @@ C'est un projet indépendant. Il n'est pas affilié à la Ville de Saguenay ni �
   choix, pour le Crédit hivernal ou Flex D). Le reste du temps, rien ne s'affiche.
 - **Des cartes en direct** des zones d'avis d'eau et des chantiers autour de l'adresse, et la neige
   ou la pluie qui tombe sur la carte du haut quand il en tombe vraiment.
+- **Le bus près de toi**, au choix : hors de chez soi, l'arrêt le plus proche de l'endroit où l'on
+  est, avec les retards en direct. La position n'est lue que pendant l'utilisation de l'app et reste
+  sur le téléphone ; le widget garde l'arrêt de l'adresse.
 - **Sans téléphone intelligent** : on texte son adresse (ou on la dit au téléphone) et on reçoit la
   journée en quelques phrases.
 - **Signaler un problème à la Ville** : un message clair à coller dans le formulaire officiel.
@@ -189,6 +192,9 @@ clair et en sombre, avec le texte agrandi jusqu'à ×2.
 ## Sécurité et vie privée
 
 - L'adresse reste sur le téléphone : pas de compte, pas de sauvegarde dans le nuage.
+- La position, si on l'active pour le bus, n'est lue que pendant l'utilisation de l'app. Les arrêts
+  proches sont calculés sur le téléphone à partir de l'horaire de la STS : elle n'est envoyée nulle
+  part. L'app ne demande pas la permission de la lire en arrière-plan.
 - Toutes les connexions sont en HTTPS. Chaque téléchargement a un délai et une taille maximale ; un
   fichier abîmé ne remplace jamais le dernier bon relevé.
 - Le serveur de l'assistant borne chaque demande, plafonne les appels par appareil et par jour, et
@@ -241,10 +247,10 @@ cd server && dart test
 cd app && flutter test
 ```
 
-337 tests : les règles et le moteur, la suite du widget (minute exacte, nuit du changement d'heure,
+347 tests : les règles et le moteur, la suite du widget (minute exacte, nuit du changement d'heure,
 temps de calcul), les lecteurs de chaque source sur leurs vraies réponses enregistrées, y compris
 abîmées, trop grosses ou trop lentes ; les parcours de l'app, les notifications, la tâche de fond,
-l'affichage sur quatre tailles d'écran, les adresses suivies et partagées ; la configuration Android
+l'affichage sur quatre tailles d'écran, les adresses suivies et partagées, le bus près de soi ; la configuration Android
 et iOS que seule la version de production révèle ; le serveur, son relais, le texto et la voix.
 
 À chaque envoi sur GitHub, une machine Linux lance tous les tests et compile la version web, et

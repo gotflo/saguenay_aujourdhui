@@ -34,6 +34,12 @@ void main() {
       expect(manifest, contains('android.permission.INTERNET'));
     });
 
+    test('la position : pendant l’utilisation seulement, jamais en arrière-plan', () {
+      expect(manifest, contains('android.permission.ACCESS_FINE_LOCATION'));
+      expect(manifest, isNot(contains('android.permission.ACCESS_BACKGROUND_LOCATION')));
+      expect(manifest, isNot(contains('android.permission.FOREGROUND_SERVICE_LOCATION')));
+    });
+
     test('un lien d’adresse partagée ouvre l’app, sans passer pour une route', () {
       expect(manifest, contains('<data android:scheme="aujourdhui" android:host="adresse" />'));
       expect(manifest, contains('android.intent.category.BROWSABLE'));
@@ -155,6 +161,12 @@ void main() {
       expect(info, contains('NSPhotoLibraryUsageDescription'));
       expect(info, contains('<string>aujourdhui</string>'));
       expect(info, contains('ITSAppUsesNonExemptEncryption'));
+    });
+
+    test('la position : demandée pour l’utilisation seulement, avec sa raison', () {
+      expect(info, contains('NSLocationWhenInUseUsageDescription'));
+      expect(info, isNot(contains('NSLocationAlwaysAndWhenInUseUsageDescription')));
+      expect(info, isNot(contains('<string>location</string>')));
     });
 
     test('les liens sont lus par l’app, pas poussés comme des routes', () {

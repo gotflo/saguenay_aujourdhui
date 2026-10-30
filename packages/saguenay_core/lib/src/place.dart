@@ -47,4 +47,21 @@ class Place {
 
   /// Pourquoi l'horaire manque, quand ce n'est pas le réseau.
   final String? collectionMissingNote;
+
+  /// La même adresse avec un autre arrêt : celui de l'endroit où l'on est.
+  Place withStop(StopSchedule? value) => Place(
+    id: id,
+    label: label,
+    shortLabel: shortLabel,
+    collection: collection,
+    collectionIsExample: collectionIsExample,
+    stop: value,
+    waterNotices: waterNotices,
+    roadworks: roadworks,
+    lat: lat,
+    lon: lon,
+    sector: sector,
+    collectionMissing: collectionMissing,
+    collectionMissingNote: collectionMissingNote,
+  );
 }

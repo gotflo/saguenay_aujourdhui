@@ -46,6 +46,8 @@
 	</array>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Pour montrer l’arrêt de bus le plus proche de l’endroit où tu es. Ta position reste sur ton téléphone.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Pour prendre en photo un objet et savoir dans quel bac il va.</string>
 	<key>NSPhotoLibraryUsageDescription</key>

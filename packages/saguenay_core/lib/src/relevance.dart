@@ -837,7 +837,9 @@ class RelevanceEngine {
         kind: SignalKind.bus,
         label: 'Bus',
         title: 'Plus de bus ce soir',
-        body: 'Arrêt ${stop.name}.',
+        body: stop.aroundYou
+            ? 'À l’arrêt le plus proche de l’endroit où tu es, ${stop.name}.'
+            : 'Arrêt ${stop.name}.',
         why: 'Le dernier départ de la journée est passé.',
         weight: .55,
         urgency: .05,
@@ -866,16 +868,20 @@ class RelevanceEngine {
     final then = next.length > 1
         ? ' Ensuite le ${next[1].route} à ${clockTime(next[1].minute + (shift[next[1]] ?? 0))}.'
         : '';
+    final around = stop.aroundYou;
     return Signal(
       kind: SignalKind.bus,
-      label: 'Ton bus',
+      label: around ? 'Bus près de toi' : 'Ton bus',
       title: fixedTimes
           ? 'Le ${first.route} passe à ${clockTime(first.minute)}'
           : 'Le ${first.route} passe ${inMinutes(wait, atMinute: at)}',
       body: fixedTimes
           ? 'Vers ${first.headsign}.$then'
           : 'Vers ${first.headsign}, à ${clockTime(at)}.$live2$then',
-      why: rush
+      why: around
+          ? 'Tu n’es pas chez toi : c’est l’arrêt le plus proche de l’endroit où tu es '
+                '(${stop.name}), et il a un départ bientôt.'
+          : rush
           ? 'C’est l’heure où tu pars d’habitude, et ton arrêt a un départ bientôt.'
           : 'Ton arrêt a un départ bientôt.',
       weight: .55,

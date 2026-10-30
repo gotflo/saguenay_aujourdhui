@@ -5,6 +5,7 @@ import 'package:saguenay_core/saguenay_core.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../state/live_sources.dart';
+import '../../state/position.dart';
 import '../assistant/plain_words.dart';
 import '../../state/providers.dart';
 import '../../state/web_relay.dart';
@@ -97,6 +98,7 @@ class _BusDetails extends StatelessWidget {
           SheetNote(
             'Dans la démo, seul le 201, rue Racine Est a un arrêt favori : le 150, Racine Est.',
           ),
+          _AroundYou(),
         ],
       );
     }
@@ -111,7 +113,12 @@ class _BusDetails extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SheetHeader('Arrêt ${stop.name}', subtitle: 'Horaire de la STS, $day'),
+        SheetHeader(
+          stop.aroundYou ? 'Près de toi : ${stop.name}' : 'Arrêt ${stop.name}',
+          subtitle: stop.aroundYou
+              ? 'L’arrêt le plus proche de l’endroit où tu es, $day'
+              : 'Horaire de la STS, $day',
+        ),
         if (departures == null)
           SheetNote(
             'L’horaire couvre du ${shortDate(stop.validFrom)} au ${shortDate(stop.validTo)}.',
@@ -143,11 +150,67 @@ class _BusDetails extends StatelessWidget {
               ? 'Horaire de la STS, avec les retards en direct.'
               : 'Horaire prévu de la STS. Le temps réel s’affiche quand le téléphone a du réseau.',
         ),
+        const _AroundYou(),
         const SizedBox(height: 16),
         FilledButton(
           onPressed: () =>
               launchUrl(Uri.parse('https://transitapp.com/'), mode: LaunchMode.externalApplication),
           child: const Text('Planifier un trajet dans Transit'),
+        ),
+      ],
+    );
+  }
+}
+
+/// Voir les arrêts de l'endroit où l'on est. La permission n'est demandée
+/// qu'ici, et seulement pendant l'utilisation de l'app.
+class _AroundYou extends ConsumerStatefulWidget {
+  const _AroundYou();
+
+  @override
+  ConsumerState<_AroundYou> createState() => _AroundYouState();
+}
+
+class _AroundYouState extends ConsumerState<_AroundYou> {
+  var _refused = false;
+
+  @override
+  Widget build(BuildContext context) {
+    if (kIsWeb) return const SizedBox.shrink();
+    if (ref.watch(busPositionProvider)) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const SheetNote(
+            'Hors de chez toi, l’app montre l’arrêt le plus proche de l’endroit où tu es. '
+            'Ta position reste sur le téléphone, et n’est lue que pendant que l’app est ouverte. '
+            'Le widget garde l’arrêt de ton adresse.',
+          ),
+          TextButton(
+            onPressed: () => ref.read(busPositionProvider.notifier).disable(),
+            child: const Text('Garder l’arrêt de mon adresse'),
+          ),
+        ],
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: 14),
+        OutlinedButton.icon(
+          icon: const Icon(Icons.near_me_rounded),
+          label: const Text('Arrêts près de moi'),
+          onPressed: () async {
+            final ok = await ref.read(busPositionProvider.notifier).enable();
+            if (mounted) setState(() => _refused = !ok);
+          },
+        ),
+        SheetNote(
+          _refused
+              ? 'Sans la permission ou la localisation du téléphone, l’app garde l’arrêt de ton '
+                    'adresse. Tu peux la donner dans les réglages du téléphone.'
+              : 'Hors de chez toi, l’app montrera l’arrêt le plus proche de l’endroit où tu es. '
+                    'Ta position reste sur le téléphone.',
         ),
       ],
     );

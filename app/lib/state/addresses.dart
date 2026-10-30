@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:saguenay_core/saguenay_core.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'position.dart';
 import 'providers.dart';
 import 'web_relay.dart';
 
@@ -155,13 +156,15 @@ class StopScheduleNotifier extends AsyncNotifier<StopSchedule?> {
     // Le serveur de la STS n'autorise pas les navigateurs.
     if (kIsWeb) return cached?.$2;
     try {
-      final zip = await ref.read(gtfsFetchProvider)();
+      final zip = await ref.read(gtfsZipProvider.future);
       final (lat, lon) = (address.lat, address.lon);
       final schedule = await _inBackground(zip, lat, lon, now);
       if (schedule == null) return null;
       await writeCached(prefs, 'bus:$id', schedule.toJson());
       return schedule;
     } on Object catch (e) {
+      // Pas de réseau : on réessaiera de télécharger le flux la prochaine fois.
+      ref.invalidate(gtfsZipProvider);
       debugPrint('Horaire du bus non lu : $e');
       return cached?.$2;
     }

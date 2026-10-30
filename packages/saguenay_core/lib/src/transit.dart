@@ -43,6 +43,7 @@ class StopSchedule {
     this.saturday = const [],
     this.sunday = const [],
     this.byDate,
+    this.aroundYou = false,
   });
 
   factory StopSchedule.fromJson(Map<String, Object?> json) => StopSchedule(
@@ -64,6 +65,10 @@ class StopSchedule {
 
   /// Numéro du jour ([dayNumber]) → départs triés.
   final Map<int, List<Departure>>? byDate;
+
+  /// Vrai pour les arrêts proches de l'endroit où l'on est, plutôt que ceux
+  /// de l'adresse. Jamais gardé : une position ne vaut que sur le moment.
+  final bool aroundYou;
 
   /// Période couverte par le flux téléchargé.
   final DateTime validFrom;

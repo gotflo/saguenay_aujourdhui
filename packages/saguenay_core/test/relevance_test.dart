@@ -63,6 +63,27 @@ void main() {
     expect(today.hero?.body, 'Vers La Baie, à 7 h 46. Ensuite le 10 à 7 h 47.');
   });
 
+  test('loin de chez soi : le bus de l’arrêt le plus proche, dit comme tel', () {
+    final racine = Demo.place('racine');
+    final home = racine.stop!;
+    final away = racine.withStop(
+      StopSchedule(
+        name: 'Racine, boul. Talbot',
+        validFrom: home.validFrom,
+        validTo: home.validTo,
+        weekday: home.weekday,
+        saturday: home.saturday,
+        sunday: home.sunday,
+        aroundYou: true,
+      ),
+    );
+    final today = engine.today(away, Demo.city, DateTime(2026, 11, 18, 7, 35));
+    expect(today.hero?.label, 'Bus près de toi');
+    expect(today.hero?.title, 'Le 105 passe dans 11 min');
+    expect(today.hero?.why, contains('l’endroit où tu es'));
+    expect(engine.today(racine, Demo.city, DateTime(2026, 11, 18, 7, 35)).hero?.label, 'Ton bus');
+  });
+
   test('la veille du 15 novembre : première nuit', () {
     final today = at('racine', DateTime(2026, 11, 14, 21, 30));
     expect(today.hero?.title, 'Première nuit sans auto dans la rue');

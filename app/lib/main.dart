@@ -14,6 +14,7 @@ import 'home_widget/widget_sync.dart';
 import 'notifications/notification_sync.dart';
 import 'notifications/notifications.dart';
 import 'state/launch.dart';
+import 'state/position.dart';
 import 'state/providers.dart';
 
 Future<void> main() async {
@@ -40,6 +41,7 @@ Future<void> main() async {
         notificationsProvider.overrideWithValue(notifications),
         homeScreenWidgetProvider.overrideWithValue(homeScreenWidget),
         if (!kIsWeb) appLinksProvider.overrideWithValue(AppLinks().uriLinkStream),
+        if (!kIsWeb) locationSourceProvider.overrideWithValue(const DeviceLocation()),
       ],
       child: const SaguenayApp(),
     ),

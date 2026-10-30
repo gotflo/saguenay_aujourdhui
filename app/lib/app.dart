@@ -11,6 +11,7 @@ import 'home_widget/widget_sync.dart';
 import 'notifications/notification_sync.dart';
 import 'state/launch.dart';
 import 'state/live_sources.dart';
+import 'state/position.dart';
 import 'state/providers.dart';
 import 'theme/theme.dart';
 
@@ -33,7 +34,11 @@ class _SaguenayAppState extends ConsumerState<SaguenayApp> {
     super.initState();
     // De retour au premier plan : on relit ce qui vient en direct (ce qui
     // relance aussi la vérification des alertes) et on recale le widget.
+    final foreground = ref.read(appInForegroundProvider.notifier);
     _lifecycle = AppLifecycleListener(
+      // La position n'est lue que pendant que l'app est à l'écran.
+      onShow: () => foreground.set(true),
+      onHide: () => foreground.set(false),
       onResume: () {
         unawaited(refreshLiveSources(ref.read));
         ref.read(widgetRefreshProvider.notifier).bump();

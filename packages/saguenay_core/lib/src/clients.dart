@@ -337,6 +337,10 @@ StopSchedule? stopScheduleFor(
   return feed.schedule(stops, from: from, days: days);
 }
 
+/// Tous les départs de la journée, pour trouver l'arrêt le plus proche
+/// d'une position. Lourd : à faire dans un isolat, une fois par jour.
+TransitDay transitDayFor(Uint8List gtfsZip, DateTime day) => GtfsFeed.parse(gtfsZip).day(day);
+
 // Routes ---------------------------------------------------------------------------
 
 /// Conditions routières et caméras du ministère des Transports.

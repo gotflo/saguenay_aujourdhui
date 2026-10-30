@@ -86,7 +86,7 @@ class WelcomeScreen extends StatelessWidget {
   }
 }
 
-/// Le problème en une image : huit endroits à surveiller, réunis ici.
+/// Le problème en une image : les endroits à surveiller, réunis ici.
 class _Sources extends StatelessWidget {
   const _Sources();
 
@@ -139,7 +139,7 @@ class _Sources extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         Text(
-          'Neuf sources qu’il fallait consulter une par une. Ici, une seule.',
+          'Une douzaine de sources qu’il fallait consulter une par une. Ici, une seule.',
           style: text.bodySmall?.copyWith(color: c.onAccent.withValues(alpha: .78)),
         ),
       ],

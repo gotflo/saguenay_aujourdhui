@@ -309,6 +309,20 @@ void main() {
       expect(copy.forDay(DateTime(2026, 10, 26)).single.tripId, 'T1');
     });
 
+    test('une journée pour tous les arrêts : les plus proches de n’importe où, aussitôt', () {
+      final feed = GtfsFeed.parse(zip());
+      final day = feed.day(DateTime(2026, 10, 26));
+      final here = day.around(racine.lat, racine.lon)!;
+      expect(here.aroundYou, isTrue);
+      expect(here.name, 'Racine, boul. Talbot');
+      expect(here.forDay(DateTime(2026, 10, 26)).map((d) => (d.route, d.minute)), [('105', 466)]);
+      // Les mêmes départs que l'horaire calculé pour l'adresse.
+      final late = feed.day(DateTime(2026, 10, 28)).around(racine.lat, racine.lon)!;
+      expect(late.forDay(DateTime(2026, 10, 28)).single.minute, 30);
+      // Loin de tout arrêt de la STS : rien.
+      expect(day.around(45.5, -73.57), isNull);
+    });
+
     test('les destinations, comme sur l’afficheur du bus', () {
       expect(cleanHeadsign('Terminus Chioutimi vers Terminus La Baie'), 'La Baie');
       expect(cleanHeadsign('UQAC vers terminus Chicoutimi'), 'Chicoutimi');
