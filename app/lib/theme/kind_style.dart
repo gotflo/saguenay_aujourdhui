@@ -28,3 +28,20 @@ extension SignalKindStyle on SignalKind {
     SignalKind.emergency => c.violet,
   };
 }
+
+/// Une couleur et une icône par bac, d'après les conventions de Saguenay : le
+/// bac bleu pour le recyclage, le bac brun pour le compost, un gris neutre pour
+/// les ordures. Jamais le vert pour les ordures, qui évoque le recyclage.
+extension WasteStreamStyle on WasteStream {
+  IconData get icon => switch (this) {
+    WasteStream.garbage => Icons.delete_outline_rounded,
+    WasteStream.recycling => Icons.recycling_rounded,
+    WasteStream.compost => Icons.compost_rounded,
+  };
+
+  Color color(AppColors c) => switch (this) {
+    WasteStream.garbage => c.ink2,
+    WasteStream.recycling => c.blue,
+    WasteStream.compost => c.amber,
+  };
+}

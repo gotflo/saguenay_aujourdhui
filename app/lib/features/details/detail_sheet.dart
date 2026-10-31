@@ -10,6 +10,7 @@ import '../assistant/plain_words.dart';
 import '../../state/providers.dart';
 import '../../state/web_relay.dart';
 import '../../theme/colors.dart';
+import '../../theme/kind_style.dart';
 import '../../widgets/live_map.dart';
 import '../../widgets/sheet_parts.dart';
 
@@ -417,9 +418,10 @@ class _CollectionDetails extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     final upcoming = place.collection.upcoming(now, count: 5);
     String when(DateTime day) {
-      if (sameDay(day, now)) return 'aujourd’hui';
-      if (sameDay(day, addDays(now, 1))) return 'demain';
-      return '';
+      final days = dayNumber(day) - dayNumber(now);
+      if (days <= 0) return 'aujourd’hui';
+      if (days == 1) return 'demain';
+      return 'dans $days jours';
     }
 
     return Column(
@@ -431,8 +433,9 @@ class _CollectionDetails extends StatelessWidget {
         else
           for (final p in upcoming)
             SheetRow(
+              leading: _BinMarks(streams: p.streams),
               title: p.streams.map((s) => s.label).join(' et '),
-              subtitle: when(p.day).isEmpty ? null : when(p.day),
+              subtitle: when(p.day),
               trailing: Text(capitalize(shortDate(p.day)), style: text.titleSmall),
             ),
         const SheetNote('Le bac va au chemin la veille et se rentre avant midi.'),
@@ -443,6 +446,125 @@ class _CollectionDetails extends StatelessWidget {
             place.collectionMissing
                 ? 'L’horaire de la Ville pour ton adresse arrive dès que le téléphone a du réseau.'
                 : 'Horaire de la Ville pour ton adresse, relu chaque semaine. Les décalages des jours fériés y sont repris.',
+          ),
+        const _SortingLookup(),
+      ],
+    );
+  }
+}
+
+/// « Dans quel bac va X ? » : une recherche hors-ligne branchée sur le guide de
+/// tri du cœur, d'après les pages de la Ville. Pas de réseau, pas de renvoi web.
+class _SortingLookup extends StatefulWidget {
+  const _SortingLookup();
+
+  @override
+  State<_SortingLookup> createState() => _SortingLookupState();
+}
+
+class _SortingLookupState extends State<_SortingLookup> {
+  final _field = TextEditingController();
+  SortingAnswer? _answer;
+  bool _searched = false;
+
+  @override
+  void dispose() {
+    _field.dispose();
+    super.dispose();
+  }
+
+  void _changed(String value) {
+    final q = value.trim();
+    setState(() {
+      _searched = q.isNotEmpty;
+      _answer = q.isEmpty ? null : SortingGuide.lookup(q);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    final text = Theme.of(context).textTheme;
+    final answer = _answer;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SectionLabel('Dans quel bac ?'),
+        const SizedBox(height: 6),
+        TextField(
+          controller: _field,
+          onChanged: _changed,
+          textInputAction: TextInputAction.search,
+          autocorrect: false,
+          decoration: InputDecoration(
+            hintText: 'Par exemple : boîte de pizza',
+            prefixIcon: Icon(Icons.search_rounded, color: c.ink3),
+            filled: true,
+            fillColor: c.bg,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(18),
+              borderSide: BorderSide.none,
+            ),
+          ),
+        ),
+        if (answer != null)
+          SheetRow(
+            leading: _placeMark(answer.place, c),
+            title: capitalize(answer.item),
+            subtitle: answer.note,
+            trailing: Text(answer.place.label, style: text.titleSmall),
+          )
+        else if (_searched)
+          const SheetNote(
+            'On ne l’a pas encore dans la liste. Demande à l’assistant, ou vois « Ça va où? » de RECYC-QUÉBEC.',
+          ),
+      ],
+    );
+  }
+
+  Widget _placeMark(SortingPlace place, AppColors c) {
+    final (IconData icon, Color color) = switch (place) {
+      SortingPlace.brown => (Icons.compost_rounded, c.amber),
+      SortingPlace.blue => (Icons.recycling_rounded, c.blue),
+      SortingPlace.garbage => (Icons.delete_outline_rounded, c.ink2),
+      SortingPlace.ecocentre => (Icons.park_rounded, c.green),
+      SortingPlace.pharmacy => (Icons.local_pharmacy_rounded, c.violet),
+      SortingPlace.notBrown || SortingPlace.notBlue => (Icons.block_rounded, c.red),
+    };
+    return Container(
+      width: 30,
+      height: 30,
+      decoration: BoxDecoration(color: color.withValues(alpha: .16), shape: BoxShape.circle),
+      child: Icon(icon, size: 17, color: color),
+    );
+  }
+}
+
+/// Les pastilles des bacs d'une collecte : une par flux, avec sa couleur et son
+/// icône, pour reconnaître le bac d'un coup d'œil sans lire le libellé.
+class _BinMarks extends StatelessWidget {
+  const _BinMarks({required this.streams});
+
+  final List<WasteStream> streams;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (final s in streams)
+          Padding(
+            padding: EdgeInsets.only(right: s == streams.last ? 0 : 6),
+            child: Container(
+              width: 30,
+              height: 30,
+              decoration: BoxDecoration(
+                color: s.color(c).withValues(alpha: .16),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(s.icon, size: 17, color: s.color(c)),
+            ),
           ),
       ],
     );

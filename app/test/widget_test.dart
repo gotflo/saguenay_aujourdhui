@@ -46,6 +46,25 @@ void main() {
     expect(find.text('Le bac va au chemin la veille et se rentre avant midi.'), findsOneWidget);
   });
 
+  testWidgets('les collectes disent dans quel bac va une matière, sans réseau', (tester) async {
+    await pumpApp(tester, place: 'racine');
+    await tester.tap(find.text('Ordures'));
+    await settle(tester);
+    final field = find.byType(TextField);
+    await tester.ensureVisible(field);
+    await tester.pump();
+
+    await tester.enterText(field, 'boîte de pizza');
+    await tester.pump();
+    expect(find.text('Boîte de pizza'), findsOneWidget);
+    expect(find.text('le bac brun'), findsOneWidget);
+
+    await tester.enterText(field, 'objet inconnu');
+    await tester.pump();
+    expect(find.text('le bac brun'), findsNothing);
+    expect(find.textContaining('Ça va où?'), findsOneWidget);
+  });
+
   testWidgets('avis d’ébullition : la carte du haut passe au rouge', (tester) async {
     await pumpApp(tester, place: 'saint-jean', at: DateTime(2026, 10, 25, 7, 10));
     expect(find.text('Fais bouillir l’eau avant de la boire'), findsOneWidget);
