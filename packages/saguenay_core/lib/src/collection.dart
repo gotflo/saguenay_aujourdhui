@@ -15,7 +15,7 @@ enum WasteStream {
 
 /// Une collecte qui revient aux deux semaines le même jour.
 ///
-/// Le compost passe chaque semaine en été : du 8 mai au 25 septembre dans le
+/// Le compost passe chaque semaine en été : du 4 mai au 25 septembre dans le
 /// calendrier 2026 de la Ville.
 class CollectionRule {
   const CollectionRule({
@@ -40,7 +40,7 @@ class CollectionRule {
 
   static bool _isSummer(DateTime d) {
     final md = d.month * 100 + d.day;
-    return md >= 508 && md <= 925;
+    return md >= 504 && md <= 925;
   }
 }
 
