@@ -314,7 +314,7 @@ void main() {
   });
 
   group('tâche de fond', () {
-    http.Client sources() => MockClient((r) async {
+    Future<http.Response> answer(http.Request r) async {
       final path = r.url.path;
       String body;
       if (path.contains('avis_aqueduc')) {
@@ -333,6 +333,34 @@ void main() {
         body = '[]';
       }
       return http.Response.bytes(utf8.encode(body), 200);
+    }
+
+    http.Client sources() => MockClient(answer);
+
+    test('aux 15 minutes : l’eau, les pannes et la météo ; le reste à l’heure', () async {
+      SharedPreferences.setMockInitialValues({'place': 'racine'});
+      final asked = <String>[];
+      final client = MockClient((r) {
+        asked.add(r.url.path);
+        return answer(r);
+      });
+      Future<void> at(DateTime t) => BackgroundRefresh.run(
+        client: client,
+        notifications: FakeNotifications()..saguenayNow = t,
+        widget: FakeHomeScreenWidget(),
+        now: t,
+      );
+      int count(String part) => asked.where((p) => p.contains(part)).length;
+
+      await at(DateTime(2026, 11, 2, 9));
+      expect((count('avis_aqueduc'), count('bismarkers'), count('etat_circulation')), (1, 1, 1));
+
+      // Un quart d'heure plus tard : les travaux reprennent leur dernier relevé.
+      await at(DateTime(2026, 11, 2, 9, 15));
+      expect((count('avis_aqueduc'), count('bismarkers'), count('etat_circulation')), (2, 2, 1));
+
+      await at(DateTime(2026, 11, 2, 10));
+      expect((count('avis_aqueduc'), count('bismarkers'), count('etat_circulation')), (3, 3, 2));
     });
 
     test('app fermée : alertes, widget et rappels, sans Riverpod', () async {

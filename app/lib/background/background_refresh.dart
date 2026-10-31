@@ -27,14 +27,27 @@ void backgroundDispatcher() {
   });
 }
 
-/// Toutes les heures, app fermée ou non : relire ce qui vient en direct,
+/// Toutes les 15 minutes, app fermée ou non : relire ce qui vient en direct,
 /// prévenir d'un nouvel avis ou d'une alerte, redessiner le widget et
 /// prolonger les rappels. Sans serveur : c'est le téléphone qui fait le travail.
+///
+/// 15 minutes est le plus court qu'Android permette, et il regroupe encore les
+/// passages quand le téléphone dort ; iOS choisit seul son moment.
 abstract final class BackgroundRefresh {
   static const task = 'rafraichir';
 
   /// Sur iOS, l'identifiant déclaré dans `Info.plist` et dans `AppDelegate`.
   static const iosTask = 'ca.saguenayaujourdhui.rafraichir';
+
+  static const frequency = Duration(minutes: 15);
+
+  /// L'eau, les pannes et la météo sont relues à chaque passage. Les travaux,
+  /// l'air, les feux et les pointes changent lentement : une fois l'heure
+  /// suffit, et on ménage la batterie et les serveurs de la Ville. Un peu moins
+  /// d'une heure, pour qu'un passage en retard ne les fasse pas sauter.
+  static const slowEvery = Duration(minutes: 55);
+
+  static const _slowKey = 'arriere-plan:lentes';
 
   static Future<void> register() async {
     if (!HomeWidgetBridge.available) return;
@@ -44,9 +57,11 @@ abstract final class BackgroundRefresh {
       await Workmanager().registerPeriodicTask(
         name,
         task,
-        frequency: const Duration(hours: 1),
+        frequency: frequency,
         constraints: Constraints(networkType: NetworkType.connected),
-        existingWorkPolicy: ExistingPeriodicWorkPolicy.keep,
+        // « update » et non « keep » : un téléphone qui avait la tâche horaire
+        // passe aux 15 minutes à la prochaine ouverture de l'app.
+        existingWorkPolicy: ExistingPeriodicWorkPolicy.update,
       );
     } on Object catch (e) {
       debugPrint('Tâche de fond non programmée : $e');
@@ -69,6 +84,17 @@ abstract final class BackgroundRefresh {
     final demo = Demo.places.where((p) => p.id == id).firstOrNull;
     if (address == null && demo == null) return;
 
+    final lastSlow = DateTime.tryParse(prefs.getString(_slowKey) ?? '');
+    // Une horloge qui a reculé ne doit pas bloquer les sources lentes.
+    final slowDue =
+        lastSlow == null || t.isBefore(lastSlow) || t.difference(lastSlow) >= slowEvery;
+    Future<T?> slow<T>(
+      String key,
+      Future<T> Function() fetch,
+      T Function(Map<String, Object?>) decode,
+      Map<String, Object?> Function(T) encode,
+    ) async => slowDue ? _refresh(prefs, key, fetch, decode, encode) : _cached(prefs, key, decode);
+
     final water = await _refresh(
       prefs,
       'aqueduc',
@@ -76,8 +102,7 @@ abstract final class BackgroundRefresh {
       WaterSnapshot.fromJson,
       (v) => v.toJson(),
     );
-    final works = await _refresh(
-      prefs,
+    final works = await slow(
       'travaux',
       () => CityLayersClient(client: client).roadworks(now: t),
       RoadworkSnapshot.fromJson,
@@ -100,27 +125,25 @@ abstract final class BackgroundRefresh {
       (v) => v.toJson(),
     );
     final env = EnvironmentClient(client: client);
-    final air = await _refresh(
-      prefs,
+    final air = await slow(
       'air',
       () => env.air(now: t),
       AirSnapshot.fromJson,
       (v) => v.toJson(),
     );
-    final fireBans = await _refresh(
-      prefs,
+    final fireBans = await slow(
       'feux',
       () => env.fireBans(now: t),
       FireBanSnapshot.fromJson,
       (v) => v.toJson(),
     );
-    final peaks = await _refresh(
-      prefs,
+    final peaks = await slow(
       'pointes',
       () => env.peaks(now: t),
       PeakSnapshot.fromJson,
       (v) => v.toJson(),
     );
+    if (slowDue) await prefs.setString(_slowKey, t.toIso8601String());
 
     final place =
         demo ??
@@ -203,13 +226,22 @@ abstract final class BackgroundRefresh {
       return value;
     } on Object catch (e) {
       debugPrint('$key non mis à jour en arrière-plan : $e');
-      final raw = prefs.getString(key);
-      if (raw == null) return null;
-      try {
-        return decode((jsonDecode(raw) as Map).cast<String, Object?>());
-      } on Object {
-        return null;
-      }
+      return _cached(prefs, key, decode);
+    }
+  }
+
+  /// Le dernier relevé gardé, ou `null`.
+  static T? _cached<T>(
+    SharedPreferences prefs,
+    String key,
+    T Function(Map<String, Object?>) decode,
+  ) {
+    final raw = prefs.getString(key);
+    if (raw == null) return null;
+    try {
+      return decode((jsonDecode(raw) as Map).cast<String, Object?>());
+    } on Object {
+      return null;
     }
   }
 }
