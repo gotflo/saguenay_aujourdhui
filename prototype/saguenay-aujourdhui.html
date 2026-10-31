@@ -76,6 +76,7 @@ p{margin:0}
 .clock output{font-family:var(--display);font-weight:600;font-size:17px;white-space:nowrap}
 .step{border:1px solid var(--line);background:var(--card);width:32px;height:32px;border-radius:50%;cursor:pointer;display:grid;place-items:center;flex:none}
 .step svg{width:16px;height:16px}
+@media (max-width:480px){.row-label{width:100%}.clock{width:100%;min-width:0;justify-content:space-between}.clock output{min-width:0;flex:1;text-align:center;font-size:15px}}
 input[type=range]{width:100%;accent-color:var(--ink)}
 .phone-side{display:flex;flex-direction:column;align-items:center;gap:14px}
 @media (min-width:901px){.phone-side{position:sticky;top:24px}}
@@ -123,7 +124,7 @@ input[type=range]{width:100%;accent-color:var(--ink)}
 .others h3{font-size:20px;font-weight:700}
 .others p{font-size:15.5px;color:var(--ink-2);margin-top:8px}
 
-.road{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:20px;margin-top:40px}
+.road{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:20px;margin-top:40px}
 @media (max-width:760px){.road{grid-template-columns:1fr 1fr}}
 .road div{border-top:3px solid var(--ink);padding-top:14px}
 .road div.now{border-color:var(--sun)}
@@ -291,10 +292,10 @@ footer a{color:var(--ink-2)}
 <main>
 <section class="wrap hero">
   <div>
-    <span class="tag">Prototype · octobre 2026</span>
+    <span class="tag">Démo · octobre 2026</span>
     <h1>Ta journée à Saguenay, d’un coup d’œil.</h1>
     <p class="lead">Le bac à sortir, la rue où tu ne peux pas te garer cette nuit, l’avis d’ébullition dans ton secteur, la neige annoncée, la coupure de courant de demain, le prochain bus. L’app te montre seulement ce qui te concerne, au moment où ça compte.</p>
-    <p class="small">Un projet indépendant, gratuit, sans pub et sans compte. Je le présente à la Ville et à la STS cet automne.</p>
+    <p class="small">Un projet indépendant, gratuit, sans pub et sans compte. Je le présente à la Ville et à la STS cet automne. <a href="https://youtu.be/WE80aOctsxs">Voir la vidéo de 5 minutes</a>.</p>
 
     <div class="try">
       <h2>Essaie un moment</h2>
@@ -345,14 +346,16 @@ footer a{color:var(--ink-2)}
 
 <section id="pourquoi" class="sec">
   <div class="wrap split">
-    <h2>Pourquoi j’ai fait ça</h2>
+    <h2>Le problème, et pourquoi ce projet</h2>
     <div class="prose">
-      <p>Toutes ces informations existent déjà. La Ville publie l’horaire des collectes et ses avis d’aqueduc, la STS ses horaires, le ministère l’état des urgences, Environnement Canada ses alertes, Hydro-Québec ses pannes et ses pointes, le ministère de l’Environnement la qualité de l’air. Mais pour savoir quoi faire ce soir, il faut aller voir à une douzaine d’endroits.</p>
-      <p>Imagine une maison où, pour prendre ta douche, tu dois aller dans une autre maison ; pour cuisiner, dans une troisième ; pour dormir, dans une quatrième. Personne ne vivrait comme ça. C’est pourtant ce qu’on fait pour s’informer : une adresse par besoin, et un jour on manque l’avis.</p>
-      <p>Je voulais une seule place qui fait le tri à ma place. Pas une app de plus qu’on oublie d’ouvrir : <b>un widget sur l’écran d’accueil, qui change selon l’heure.</b> À 21 h en hiver, il rappelle de déplacer l’auto. La veille de la collecte, il parle du bac. S’il y a un avis d’ébullition dans ton secteur, ça passe avant tout le reste.</p>
-      <p>Le widget connaît déjà les sept prochains jours et change de lui-même, à la minute près. Sans réseau, il continue, et les rappels aussi.</p>
+      <p><b>Le problème.</b> À Saguenay, l’information qui touche ta journée existe, et elle est fiable. Mais elle est dans une douzaine d’endroits : les collectes sur le site de la Ville, les avis d’eau sur une carte, le stationnement dans un règlement, le bus à la STS, les pannes chez Hydro-Québec, la météo à Environnement Canada, les routes à Québec 511, les urgences au ministère de la Santé. Chacun fait bien son travail, mais aucun ne te donne ta journée.</p>
+      <p><b>Pourquoi ce n’est pas avantageux.</b> C’est à toi d’y penser : le jour où tu ne vas pas voir, tu ne sais pas. Ce n’est pas fait pour ton adresse : à toi de trouver ta rue et de décider si ça te concerne. Et les alertes ne joignent pas tout le monde : la Ville a un vrai système d’appels et de textos, mais il faut y être inscrit et à jour. D’après sa carte publique, une résidence visée sur trois n’a pas été jointe.</p>
+      <p><b>Pour bien comprendre.</b> Imagine une journée ordinaire dans une maison éclatée. Tu te douches dans une maison, tu cuisines dans une deuxième, tu t’habilles dans une troisième et tu dors dans une quatrième. Chaque maison est bien tenue, mais tu passes ton temps sur la route. Et si tu en sautes une, ce qu’il y avait à y faire ne se fait pas. C’est exactement comme ça qu’on s’informe : chaque maison est un site, chaque trajet une recherche, et la maison sautée, c’est l’avis manqué.</p>
+      <p><b>Ma question de départ.</b> Comment faire pour que chacun sache à temps ce qui touche son adresse, sans aller le chercher ?</p>
+      <p><b>Mon objectif.</b> Que ce soit déjà sous tes yeux, sans un seul geste.</p>
+      <p><b>Pourquoi un widget.</b> Une app, il faut penser à l’ouvrir. Ton écran d’accueil, tu le regardes de toute façon. Le widget y affiche ce qui compte selon l’heure : à 21 h en hiver, l’auto à déplacer ; la veille de la collecte, le bac ; et s’il y a un avis d’ébullition dans ton secteur, ça passe avant tout le reste. Il connaît déjà les sept prochains jours, change de lui-même à la minute près et continue sans réseau.</p>
       <p>Il n’y a pas de magie là-dedans, juste des règles simples qu’on peut expliquer à n’importe qui. Et l’app ne sait rien de toi à part ton adresse, qu’elle garde sur ton téléphone.</p>
-      <p class="sign">Florent Akpa, développeur</p>
+      <p class="sign">Florent Akpa, développeur · <a href="https://gotflo.netlify.app">Portfolio</a></p>
     </div>
   </div>
 
@@ -367,7 +370,7 @@ footer a{color:var(--ink-2)}
     <h2>Ce qu’il y a dedans</h2>
     <div>
       <div class="list" id="list"></div>
-      <p class="later">Pas encore possible : savoir quand la déneigeuse passe dans ta rue. Les camions ont un GPS, mais rien n’est public pour l’instant. C’est une des choses que je vais demander.</p>
+      <p class="later">Pas encore possible : savoir quand la déneigeuse passe dans ta rue. Les camions ont un GPS, mais rien n’est public pour l’instant. C’est une des choses que je vais demander. Pas encore branché non plus : les pannes d’Hydro-Jonquière, qui dessert une partie de Jonquière.</p>
       <div class="offline-grid">
         <div><h3>Marche sans réseau</h3><ul><li>Stationnement, collectes de ton adresse, trois semaines d’horaire du bus, travaux connus</li><li>Coupures d’eau et de courant déjà annoncées</li><li>Le widget, pour sept jours, et tous les rappels</li></ul></div>
         <div><h3>A besoin du réseau</h3><ul><li>Météo et alertes</li><li>Pannes, routes et urgences</li><li>Qualité de l’air et feux</li><li>Retards du bus</li></ul><p class="later" style="margin-top:10px;font-size:14.5px">Sans réseau, l’app montre le dernier relevé avec son heure.</p></div>
@@ -385,9 +388,9 @@ footer a{color:var(--ink-2)}
         <div>
           <h3>Ville de Saguenay</h3>
           <div class="prose">
-            <p>Vos avis d’aqueduc rejoignent les gens inscrits aux appels automatisés. L’app les afficherait aussi à toutes les personnes qui y ont entré leur adresse, dès que l’avis tombe.</p>
+            <p>Vos avis d’aqueduc rejoignent les gens inscrits aux appels automatisés. L’app les afficherait aussi à toutes les personnes qui y ont entré leur adresse, sans qu’elles aient à s’inscrire.</p>
             <p>Même idée pour les collectes et le stationnement de nuit : un rappel le soir même, ça évite des bacs oubliés et des contraventions à 45 $.</p>
-            <div class="callout"><b>1 248 résidences</b>visées par les avis d’aqueduc de ce matin n’avaient pas été jointes par téléphone, selon votre propre carte des avis (2 734 sur 3 982). Je lis peut-être mal ces champs, on pourra le vérifier ensemble.</div>
+            <div class="callout"><b>1 résidence sur 3</b>visée par un avis d’aqueduc n’a pas été jointe par l’appel automatisé, selon votre carte publique des avis : 280 142 jointes sur 433 080 visées, pour 867 avis de 2024 à 2026. Je lis peut-être mal ces champs, on pourra le vérifier ensemble.</div>
           </div>
         </div>
         <div class="ask">
@@ -420,23 +423,19 @@ footer a{color:var(--ink-2)}
           <p class="mail">Contact : <code>sts@stsaguenay.com</code><button class="copy" type="button" data-copy="sts@stsaguenay.com">Copier</button></p>
         </div>
       </article>
-      <div class="others">
-        <div><h3>Promotion Saguenay</h3><p>Ses fonds numériques pourraient couvrir le développement et des tests avec des citoyens. Il faut encore vérifier si un projet comme celui-ci est admissible.</p></div>
-        <div><h3>UQAC et cégeps</h3><p>Des projets étudiants sont possibles : tests d’accessibilité, qualité des données, essais avec de vrais usagers.</p></div>
-        <div><h3>SaguenayCollecte</h3><p>Leur app fait très bien les collectes. Plutôt que de leur faire concurrence, je propose qu’on se renvoie mutuellement les usagers.</p></div>
-      </div>
     </div>
   </div>
 </section>
 
 <section id="suite" class="sec">
   <div class="wrap">
-    <h2>La suite</h2>
+    <h2>La suite : une version publique avant Noël</h2>
     <div class="road">
-      <div class="now"><b>Fin octobre</b><span>Je présente le projet et j’envoie les demandes.</span></div>
-      <div><b>Mi-décembre</b><span>Première version publique, avec les sources ouvertes et celles que vous aurez acceptées.</span></div>
-      <div><b>Janvier</b><span>Le reste dès les accords, et la version web.</span></div>
-      <div><b>Avril</b><span>Bilan de l’hiver, partagé avec la Ville.</span></div>
+      <div class="now"><b>Aujourd’hui</b><span>Je présente le projet à la Ville et à la STS, et j’envoie les demandes.</span></div>
+      <div><b>Novembre</b><span>Les réponses des partenaires, des essais avec des citoyens et sur un vrai iPhone.</span></div>
+      <div><b>Mi-décembre</b><span>Première version publique, avec les sources ouvertes et celles qui auront été acceptées.</span></div>
+      <div><b>Janvier 2027</b><span>Le reste dès les accords, et la version web.</span></div>
+      <div><b>Avril 2027</b><span>Le bilan de l’hiver, partagé avec la Ville.</span></div>
     </div>
   </div>
 </section>
