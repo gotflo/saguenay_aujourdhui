@@ -501,9 +501,15 @@ class _SortingLookupState extends State<_SortingLookup> {
             prefixIcon: Icon(Icons.search_rounded, color: c.ink3),
             filled: true,
             fillColor: c.bg,
-            border: OutlineInputBorder(
+            // Sur la feuille, le fond seul se confond avec elle : un liseré montre
+            // que c'est une case où écrire.
+            enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(18),
-              borderSide: BorderSide.none,
+              borderSide: BorderSide(color: c.line),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(18),
+              borderSide: BorderSide(color: c.ink3, width: 1.5),
             ),
           ),
         ),
